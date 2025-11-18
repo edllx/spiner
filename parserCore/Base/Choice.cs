@@ -1,4 +1,4 @@
-namespace spiner;
+namespace spinner;
 
 public class ChoiceParser(params IParser[] parsers) : IParser
 {

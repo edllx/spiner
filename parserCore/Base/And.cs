@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace spiner;
+namespace spinner;
 
 public class AndParser(IParser first, IParser second) : IParser
 {

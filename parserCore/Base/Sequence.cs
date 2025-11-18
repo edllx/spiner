@@ -1,5 +1,5 @@
 using System.Text;
-namespace spiner;
+namespace spinner;
 
 
 public class SequenceParser(params IParser[] parsers) : IParser

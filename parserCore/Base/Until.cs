@@ -1,28 +1,30 @@
-namespace spiner;
+namespace spinner;
 
 public class ConsumeUntilParser(IParser end, ParserHint[] hints) : IParser
 {
     public ParseResult Parse(ParseContext context)
     {
-
         int initialPosition = context.Position;
         List<IToken> values = [];
         var isEndParser = Parser.PositiveLookAhead(end).Parse(context);
         bool consumed = false;
 
-
         if (!context.HasNext() || isEndParser.Success)
         {
-            return ParseResult.FailAt(new ParseFailedToken(initialPosition, this) { At = initialPosition });
+            return ParseResult.FailAt(
+                new ParseFailedToken(initialPosition, this) { At = initialPosition }
+            );
         }
-
 
         while (context.HasNext() && !consumed && !isEndParser.Success)
         {
             for (int i = 0; i < hints.Length; i++)
             {
                 ParserHint h = hints[i];
-                if (!Parser.PositiveLookAhead(h.Hint).Parse(context).Success) { continue; }
+                if (!Parser.PositiveLookAhead(h.Hint).Parse(context).Success)
+                {
+                    continue;
+                }
                 int prevPosiion = context.Position;
 
                 var inline = h.Candidate.Parse(context);
@@ -35,7 +37,16 @@ public class ConsumeUntilParser(IParser end, ParserHint[] hints) : IParser
 
                 if (prevPosiion > initialPosition)
                 {
-                    values.Add(new TextToken() { Body = new() { Start = initialPosition, Length = prevPosiion - initialPosition } });
+                    values.Add(
+                        new TextToken()
+                        {
+                            Body = new()
+                            {
+                                Start = initialPosition,
+                                Length = prevPosiion - initialPosition,
+                            },
+                        }
+                    );
                 }
 
                 values.Add(inline.Token);
@@ -43,8 +54,16 @@ public class ConsumeUntilParser(IParser end, ParserHint[] hints) : IParser
                 i = hints.Length;
                 consumed = true;
 
-                return ParseResult.SuccessAt(new SequenceToken(values.ToArray()) { Body = new() { Start = initialPosition, Length = context.Position - initialPosition } });
-
+                return ParseResult.SuccessAt(
+                    new SequenceToken(values.ToArray())
+                    {
+                        Body = new()
+                        {
+                            Start = initialPosition,
+                            Length = context.Position - initialPosition,
+                        },
+                    }
+                );
             }
 
             if (!consumed)
@@ -54,13 +73,33 @@ public class ConsumeUntilParser(IParser end, ParserHint[] hints) : IParser
             }
         }
 
-        values.Add(new TextToken() { Body = new() { Start = initialPosition, Length = context.Position - initialPosition } });
+        values.Add(
+            new TextToken()
+            {
+                Body = new()
+                {
+                    Start = initialPosition,
+                    Length = context.Position - initialPosition,
+                },
+            }
+        );
 
-        var x = new SequenceToken(values.ToArray()) { Body = new() { Start = initialPosition, Length = context.Position - initialPosition } };
-        return ParseResult.SuccessAt(new SequenceToken(values.ToArray()) { Body = new() { Start = initialPosition, Length = context.Position - initialPosition } });
+        var x = new SequenceToken(values.ToArray())
+        {
+            Body = new() { Start = initialPosition, Length = context.Position - initialPosition },
+        };
+        return ParseResult.SuccessAt(
+            new SequenceToken(values.ToArray())
+            {
+                Body = new()
+                {
+                    Start = initialPosition,
+                    Length = context.Position - initialPosition,
+                },
+            }
+        );
     }
 }
-
 
 public class TryUntilParser(IParser end, IParser candidate) : IParser
 {
@@ -73,7 +112,9 @@ public class TryUntilParser(IParser end, IParser candidate) : IParser
         if (!context.HasNext() || isEndParser.Success)
         {
             context.Position = initialPosition;
-            return ParseResult.FailAt(new ParseFailedToken(initialPosition, this) { At = initialPosition });
+            return ParseResult.FailAt(
+                new ParseFailedToken(initialPosition, this) { At = initialPosition }
+            );
         }
 
         var result = candidate.Parse(context);
@@ -82,13 +123,28 @@ public class TryUntilParser(IParser end, IParser candidate) : IParser
         {
             values.Add(result.Token);
             isEndParser = isEndParser = Parser.PositiveLookAhead(end).Parse(context);
-            if (isEndParser.Success) { break; }
+            if (isEndParser.Success)
+            {
+                break;
+            }
             result = candidate.Parse(context);
         }
 
-        if (result.Success && !context.HasNext()) { values.Add(result.Token); }
+        if (result.Success && !context.HasNext())
+        {
+            values.Add(result.Token);
+        }
 
-        return ParseResult.SuccessAt(new SequenceToken(values.ToArray()) { Body = new() { Start = initialPosition, Length = context.Position - initialPosition } });
+        return ParseResult.SuccessAt(
+            new SequenceToken(values.ToArray())
+            {
+                Body = new()
+                {
+                    Start = initialPosition,
+                    Length = context.Position - initialPosition,
+                },
+            }
+        );
     }
 }
 

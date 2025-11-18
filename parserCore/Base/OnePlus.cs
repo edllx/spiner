@@ -1,4 +1,4 @@
-namespace spiner;
+namespace spinner;
 
 public class OnePlusParser(IParser parser) : IParser
 {

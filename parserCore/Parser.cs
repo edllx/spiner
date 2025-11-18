@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace spiner;
+namespace spinner;
 
 public struct Range
 {
@@ -36,29 +36,6 @@ public enum ParserType
     Any,
     Char,
     Digit,
-
-    // MD
-    MDRoot,
-    Bold,
-    Italic,
-    Text,
-    Inline,
-    Paragraph,
-    Header,
-    List,
-    UL,
-    ULItem,
-    OLItem,
-    ULCheckbox,
-    OLCheckbox,
-    OL,
-    LI,
-    H1,
-    H2,
-    H3,
-    H4,
-    H5,
-    H6,
 }
 
 public class ParseStat
@@ -117,11 +94,15 @@ public struct ParseResult(bool success)
 
     public string ToString(string source, int depth = 0)
     {
-        if (Token is null) { return ""; }
+        if (Token is null)
+        {
+            return "";
+        }
         return Token.ToString(source, depth);
     }
 
     public static ParseResult FailAt(IToken token) => new ParseResult(false) { Token = token };
+
     public static ParseResult SuccessAt(IToken token) => new ParseResult(true) { Token = token };
 }
 
@@ -130,11 +111,12 @@ public interface IParser
     ParseResult Parse(ParseContext context);
 }
 
-
 public static class Parser
 {
     public static IParser And(this IParser first, IParser next) => new AndParser(first, next);
+
     public static IParser Or(this IParser first, IParser second) => new OrParser(first, second);
+
     public static readonly IParser EOF = new EndOfFileParser();
     public static readonly IParser LineBreak = new LineBreakParser();
     public static readonly IParser Any = new AnyParser();
@@ -142,20 +124,27 @@ public static class Parser
     public static readonly IParser Digit = new DigitParser();
     public static readonly IParser Space = new CharParser(' ');
 
-
     public static IParser Seq(params IParser[] parsers) => new SequenceParser(parsers);
-    public static IParser Choice(params IParser[] parsers) => new ChoiceParser(parsers);
-    public static IParser ConsumeUntil(IParser end, ParserHint[] hints) => new ConsumeUntilParser(end, hints);
-    public static IParser ConsumeUntil(IParser end) => new ConsumeUntilParser(end, []);
-    public static IParser TryUntil(IParser end, IParser candidate) => new TryUntilParser(end, candidate);
 
+    public static IParser Choice(params IParser[] parsers) => new ChoiceParser(parsers);
+
+    public static IParser ConsumeUntil(IParser end, ParserHint[] hints) =>
+        new ConsumeUntilParser(end, hints);
+
+    public static IParser ConsumeUntil(IParser end) => new ConsumeUntilParser(end, []);
+
+    public static IParser TryUntil(IParser end, IParser candidate) =>
+        new TryUntilParser(end, candidate);
 
     public static IParser Optional(IParser parser) => new OptionalParser(parser);
-    public static IParser ZeroPlus(IParser parser) => new ZeroPlusParser(parser);
-    public static IParser OnePlus(IParser parser) => new OnePlusParser(parser);
-    public static IParser PositiveLookAhead(IParser parser) => new PositiveLookAheadParser(parser);
-    public static IParser NegativeLookAhead(IParser parser) => new PositiveLookAheadParser(parser);
 
+    public static IParser ZeroPlus(IParser parser) => new ZeroPlusParser(parser);
+
+    public static IParser OnePlus(IParser parser) => new OnePlusParser(parser);
+
+    public static IParser PositiveLookAhead(IParser parser) => new PositiveLookAheadParser(parser);
+
+    public static IParser NegativeLookAhead(IParser parser) => new PositiveLookAheadParser(parser);
 
     public static IParser Char(char c) => new CharParser(c);
 }
@@ -165,7 +154,6 @@ public static class TypeExtensions
     public static string Print(this Dictionary<IParser, ParseStat> stat)
     {
         StringBuilder builder = new();
-
 
         foreach (var elem in stat)
         {

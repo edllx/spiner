@@ -1,4 +1,4 @@
-namespace spiner;
+namespace spinner;
 
 public class OrParser(IParser first, IParser second) : IParser
 {

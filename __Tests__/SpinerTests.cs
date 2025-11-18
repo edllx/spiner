@@ -1,4 +1,3 @@
-
 namespace __Tests__;
 
 public class TestParser

@@ -1,4 +1,4 @@
-namespace spiner;
+namespace spinner;
 
 public class PositiveLookAheadParser(IParser parser) : IParser
 {
