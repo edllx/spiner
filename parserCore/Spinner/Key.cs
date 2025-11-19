@@ -1,9 +1,8 @@
-using System.Text;
 using static spinner.Parser;
 
 namespace spinner;
 
-public class KeyDetector : IParser
+internal class KeyDetector : IParser
 {
     private static IParser OpenningMark = Seq(Char('{'), Char('{'));
     private static IParser ClossingMark = Seq(Char('}'), Char('}'));
@@ -34,7 +33,7 @@ public class KeyDetector : IParser
     }
 }
 
-public class KeySpliter : IParser
+internal class KeySpliter : IParser
 {
     private static IParser OpenningMark = Seq(Char('{'), Char('{'));
     private IParser Value = ZeroPlus(

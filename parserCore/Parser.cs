@@ -147,6 +147,16 @@ public static class Parser
     public static IParser NegativeLookAhead(IParser parser) => new PositiveLookAheadParser(parser);
 
     public static IParser Char(char c) => new CharParser(c);
+
+    public static IParser AnyChar => new AnyCharParser();
+
+    public static IParser PrintableChar(string exclude) => new PrintableCharParser(exclude);
+
+    public static IParser AlphaChar => new AlphaCharParser();
+
+    public static IParser StringP(string str) => new StringParser(str);
+
+    public static IParser AnyStringP(string str) => new AnyStringParser(str);
 }
 
 public static class TypeExtensions

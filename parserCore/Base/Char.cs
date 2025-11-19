@@ -1,9 +1,9 @@
 namespace spinner;
 
-
 public class CharParser(char c) : IParser
 {
     public char C => c;
+
     public ParseResult Parse(ParseContext context)
     {
         int initialPosition = context.Position;
@@ -15,8 +15,33 @@ public class CharParser(char c) : IParser
 
         context.Position++;
 
-        return ParseResult.SuccessAt(new TextToken() { Body = new() { Start = initialPosition, Length = 1 } });
+        return ParseResult.SuccessAt(
+            new TextToken()
+            {
+                Body = new() { Start = initialPosition, Length = 1 },
+            }
+        );
     }
 }
 
+public class AnyCharParser : IParser
+{
+    public ParseResult Parse(ParseContext context)
+    {
+        int initialPosition = context.Position;
 
+        if (!context.HasNext() || !char.IsAsciiLetter(context.Input[context.Position]))
+        {
+            return ParseResult.FailAt(new ParseFailedToken(initialPosition, this));
+        }
+
+        context.Position++;
+
+        return ParseResult.SuccessAt(
+            new TextToken()
+            {
+                Body = new() { Start = initialPosition, Length = 1 },
+            }
+        );
+    }
+}
