@@ -8,8 +8,9 @@ internal class SpinnerServicesParser : IParser
     private static IParser ClosingTag = Seq(StringP("</"), StringP("Services"), Char('>'));
     private static IParser Comment = new XMLCommentParser();
     private static IParser Service = new SpinnerServiceParser();
+    private static IParser GenericXMLElement = new XMLElemenParser(AlphaChar);
     private static IParser Body = ZeroPlus(
-        Choice(LineBreak, Comment, Service, ConsumeUntil(ClosingTag))
+        Choice(LineBreak, Comment, Service, GenericXMLElement, ConsumeUntil(ClosingTag))
     );
     private static IParser Spaces = AnyStringP(" \t");
 
@@ -37,7 +38,12 @@ internal class SpinnerServiceParser : IParser
 {
     private static IParser ClosingTag = Seq(StringP("</"), StringP("Service"), Char('>'));
     private static IParser Comment = new XMLCommentParser();
-    private static IParser Body = ZeroPlus(Choice(LineBreak, Comment, ConsumeUntil(ClosingTag)));
+    private static IParser GenericXMLElement = new XMLElemenParser(AlphaChar);
+    private static IParser Keys = new SpinnerKeyParser();
+
+    private static IParser Body = ZeroPlus(
+        Choice(LineBreak, Comment, Keys, GenericXMLElement, ConsumeUntil(ClosingTag))
+    );
     private static IParser Spaces = AnyStringP(" \t");
 
     private static IParser ServiceBody = new XMLElemenParser("Service", Body);
@@ -94,7 +100,7 @@ public class ServiceToken : IToken
         var buffer = new StringBuilder();
 
         var lfMark = $"{"".PadRight(4 * depth)}<Service>\n";
-        buffer.Append(string.Join('\n', Attributes.Select(el => el.ToString(source, depth + 1))));
+        buffer.Append(string.Join('\n', Children.Select(el => el.ToString(source, depth + 1))));
         var rgMark = $"\n{"".PadRight(4 * depth)}</Service>";
 
         var body = $"{lfMark}{buffer}{rgMark}";

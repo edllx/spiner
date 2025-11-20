@@ -53,12 +53,12 @@ public class KeyManager
     public static void Resolve(Key[] keys)
     {
         KeyParser parser = new();
-        Dictionary<string, (int, KeyTokens)> dictionary = [];
+        Dictionary<string, (int, KeysToken)> dictionary = [];
 
         for (int i = 0; i < keys.Length; i++)
         {
             var res = parser.Parse(keys[i].Value);
-            var tks = res.Token as KeyTokens;
+            var tks = res.Token as KeysToken;
             if (tks is null)
             {
                 continue;
@@ -81,7 +81,7 @@ public class KeyManager
     }
 
     private static void Resolve(
-        Dictionary<string, (int, KeyTokens)> dictionary,
+        Dictionary<string, (int, KeysToken)> dictionary,
         Key[] keys,
         int[] order
     )
@@ -108,7 +108,7 @@ public class KeyManager
                             );
                             break;
 
-                        case KeyToken t:
+                        case KeyRefToken t:
 
                             var name = k
                                 .Value.AsSpan()
@@ -135,7 +135,7 @@ public class KeyManager
     }
 
     private static List<(int, int)> GenerateNb(
-        Dictionary<string, (int, KeyTokens)> dictionary,
+        Dictionary<string, (int, KeysToken)> dictionary,
         Key[] keys
     )
     {
@@ -144,7 +144,7 @@ public class KeyManager
         {
             foreach (var k in x.Value.Item2.Tokens)
             {
-                if (k is not KeyToken kt)
+                if (k is not KeyRefToken kt)
                 {
                     continue;
                 }

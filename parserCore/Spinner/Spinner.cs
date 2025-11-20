@@ -8,14 +8,22 @@ public class SpinnerParser
     private static IParser ClosingTag = Seq(StringP("</"), StringP("Spinner"), Char('>'));
     private static IParser Comment = new XMLCommentParser();
     private static IParser Services = new SpinnerServicesParser();
+    private static IParser GenericXMLElement = new XMLElemenParser(AlphaChar);
     private static IParser SpinnerBody = ZeroPlus(
-        Choice(LineBreak, Comment, Services, ConsumeUntil(ClosingTag))
+        Choice(LineBreak, Comment, Services, GenericXMLElement, ConsumeUntil(ClosingTag))
     );
     private static IParser SpinnerDoc = new XMLElemenParser("Spinner", SpinnerBody);
 
     public ParseResult Parse(string source)
     {
         var context = new ParseContext(source);
+
+        try { }
+        catch (MissingKeyNameException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
         var res = SpinnerDoc.Parse(context);
 
         if (!res.Success)

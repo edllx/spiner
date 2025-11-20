@@ -13,10 +13,16 @@
       <GeneratedKey name="POSTGRES_PASSWORD" len="32" />
       <GeneratedKey name="POSTGRES_DB" len="10" />
       <Key name="DB_CONNECTION_STRING" value="Server=${CONTAINER_NAME};Port=5432;Database=${POSTGRES_DB};User ID=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"/>
+      <ValidXmlElement>
+      </ValidXmlElement>
     </Service>
 
     <Service name="api" build="./API.Dockerfile">
       <Key name="DB_CONNECTION_STRING"/>
+      <AnOtherValidXmlElement>
+        <!--This element should be ignored -->
+        <Key name="DB_CONNECTION_STRING"/>
+      </AnOtherValidXmlElement>
     </Service>
   </Services>
 </Spinner>
