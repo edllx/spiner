@@ -6,30 +6,41 @@ SpinnerParser parser = new();
 string fileContent = """
 <Spinner>
   <!--Define the structure of each services-->
-
-  <!--Key values are resolved when the element is instantiated wich let the posibility 
-  to compose key based on other keys-->
-
-  <!--Param are key that are suposed to be provided when the element is instantiated
-  by definition they are not resolved-->
   <Services>
     <Service name="db" image="potgress:17">
-      <Key name="POSTGRES_USER" value="spiner" />
-      <GeneratedKey name="POSTGRES_PASSWORD" len="32" />
-      <!--Service comment-->
-      <GeneratedKey name="POSTGRES_DB" len="10" />
-      <Key name="DB_CONNECTION_STRING" value="Server=${CONTAINER_NAME};Port=5432;Database=${POSTGRES_DB};User ID=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"/>
+      <Layer name="base-schema">
+        <Sql source="./database/Config/schema.sql"/>
+      </Layer>
+
+      <Layer name="fahrenheit10" from="base-schema" >
+        <Sql source="./database/Config/fahrenheit10.sql"/>
+      </Layer>
+
+      <Layer name="celsius10" from="base-schema">
+        <Copy source="./database/Config/celsius10.sql" dest="/scripts"/>
+        <Run command="psql -U ${POSTGRES_USER} -f /script/celsius10.sql" />
+      </Layer>
+
+      <Layer name="bothfandc" from="fahrenheit10,celsius10" >
+        <Run>
+
+          echo multiline command
+
+          echo multiline command
+
+        </Run>
+      </Layer>
     </Service>
 
-    <Service name="api" build="./API.Dockerfile">
-      <Key name="DB_CONNECTION_STRING"/>
-    </Service>
   </Services>
 </Spinner>
 """;
 
 SpinnerParser spinner = new();
 
-var res = spinner.Parse(fileContent);
+//var st = "          echo multiline command\n          echo multiline command";
 
+//var r = TextToken.Normalize(st, 0);
+
+var res = spinner.Parse(fileContent);
 Console.WriteLine(res.ToString(fileContent));

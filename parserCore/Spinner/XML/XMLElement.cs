@@ -62,6 +62,13 @@ internal class XMLElemenParser : IParser
         List<XMLCommentToken> comments = [];
         Unroll(res.Token, children, attributes, comments, texts);
 
+        if (IsElement(context, texts[1], "Run"))
+        {
+            var tx = texts[4];
+            var str = context.Input.AsSpan().Slice(tx.Body.Start, tx.Body.Length).ToString();
+            TextToken.Normalize(str, tx.Body.Start, children);
+        }
+
         var token = new XMLElementToken()
         {
             Children = children.ToArray(),
@@ -71,6 +78,11 @@ internal class XMLElemenParser : IParser
         };
 
         return ParseResult.SuccessAt(token);
+    }
+
+    private static bool IsElement(ParseContext ctx, IToken token, string element)
+    {
+        return ctx.Input.AsSpan().Slice(token.Body.Start, token.Body.Length).ToString() == element;
     }
 
     private static void Unroll(
@@ -93,6 +105,7 @@ internal class XMLElemenParser : IParser
                 break;
 
             case TextToken tk:
+
                 texts.Add(tk);
                 break;
 
@@ -137,6 +150,5 @@ public class XMLElementToken : IToken
 
         var body = $"{lfMark}{buffer}{rgMark}";
         return body;
-        throw new NotImplementedException();
     }
 }

@@ -1,3 +1,5 @@
+using static spinner.Parser;
+
 namespace spinner;
 
 public class ConsumeUntilParser(IParser end, ParserHint[] hints) : IParser
@@ -151,6 +153,86 @@ public class TryUntilParser(IParser end, IParser candidate) : IParser
 public struct TextToken() : IToken
 {
     public Range Body { get; init; }
+
+    public static TextToken[] Normalize(string str, int offset)
+    {
+        IParser Spaces = AnyStringP(" \t");
+        IParser p = ZeroPlus(Seq(Optional(Spaces), ConsumeUntil(LineBreak), Optional(LineBreak)));
+        var res = p.Parse(new ParseContext(str));
+        List<TextToken> parts = [];
+
+        Unroll(res.Token, parts, str);
+
+        List<TextToken> pa = [];
+
+        for (int i = 0; i < parts.Count; i++)
+        {
+            if (str[parts[i].Body.Start] == ' ')
+            {
+                continue;
+            }
+            var tk = new TextToken()
+            {
+                Body = new()
+                {
+                    Start = parts[i].Body.Start + offset,
+                    Length = parts[i].Body.Length,
+                },
+            };
+            pa.Add(tk);
+        }
+
+        return pa.ToArray();
+    }
+
+    public static void Normalize(string str, int offset, List<IToken> dest)
+    {
+        IParser Spaces = AnyStringP(" \t");
+        IParser p = ZeroPlus(
+            Choice(LineBreak, Seq(Optional(Spaces), ConsumeUntil(LineBreak), Optional(LineBreak)))
+        );
+        var res = p.Parse(new ParseContext(str));
+        List<TextToken> parts = [];
+
+        Unroll(res.Token, parts, str);
+
+        for (int i = 0; i < parts.Count; i++)
+        {
+            if (str[parts[i].Body.Start] == ' ')
+            {
+                continue;
+            }
+            var tk = new TextToken()
+            {
+                Body = new()
+                {
+                    Start = parts[i].Body.Start + offset,
+                    Length = parts[i].Body.Length,
+                },
+            };
+            dest.Add(tk);
+        }
+    }
+
+    private static void Unroll(IToken token, List<TextToken> destination, string source)
+    {
+        switch (token)
+        {
+            case TextToken text:
+                destination.Add(text);
+                break;
+
+            case SequenceToken seq:
+                foreach (IToken t in seq.Children)
+                {
+                    Unroll(t, destination, source);
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
 
     public string ToString(string source, int depth = 0)
     {

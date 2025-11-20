@@ -148,6 +148,8 @@ public class TestParser
 
         var exepted = Files.ExpectedServiceKeyTest;
         Assert.True(actual.Success);
+        Console.WriteLine(actual.ToString(content));
+
         Assert.Equal(exepted.ToString(content), actual.ToString(content));
     }
 }

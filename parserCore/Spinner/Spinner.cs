@@ -16,26 +16,26 @@ public class SpinnerParser
 
     public ParseResult Parse(string source)
     {
-        var context = new ParseContext(source);
+        try
+        {
+            var context = new ParseContext(source);
+            var res = SpinnerDoc.Parse(context);
+            if (!res.Success)
+            {
+                return res;
+            }
 
-        try { }
-        catch (MissingKeyNameException ex)
+            XMLElementToken xmlElement = (XMLElementToken)res.Token;
+
+            return ParseResult.SuccessAt(
+                new SpinnerToken() { Body = xmlElement.Body, Children = xmlElement.Children }
+            );
+        }
+        catch (MissingKeyAttributeException ex)
         {
             Console.WriteLine(ex.Message);
+            return ParseResult.FailAt(new ParseFailedToken());
         }
-
-        var res = SpinnerDoc.Parse(context);
-
-        if (!res.Success)
-        {
-            return res;
-        }
-
-        XMLElementToken xmlElement = (XMLElementToken)res.Token;
-
-        return ParseResult.SuccessAt(
-            new SpinnerToken() { Body = xmlElement.Body, Children = xmlElement.Children }
-        );
     }
 }
 

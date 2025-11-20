@@ -2,7 +2,7 @@ using static spinner.Parser;
 
 namespace spinner;
 
-public class MissingKeyNameException(int position)
+public class MissingKeyAttributeException(int position)
     : Exception($"Missing key name Pos: {position}") { }
 
 internal class SpinnerKeyParser : IParser
@@ -54,7 +54,7 @@ internal class SpinnerKeyParser : IParser
 
         if (name.Length <= 0)
         {
-            throw new MissingKeyNameException(initialPosition);
+            throw new MissingKeyAttributeException(initialPosition);
         }
 
         return ParseResult.SuccessAt(

@@ -40,9 +40,10 @@ internal class SpinnerServiceParser : IParser
     private static IParser Comment = new XMLCommentParser();
     private static IParser GenericXMLElement = new XMLElemenParser(AlphaChar);
     private static IParser Keys = new SpinnerKeyParser();
+    private static IParser Layers = new SpinnerLayerParser();
 
     private static IParser Body = ZeroPlus(
-        Choice(LineBreak, Comment, Keys, GenericXMLElement, ConsumeUntil(ClosingTag))
+        Choice(LineBreak, Comment, Keys, Layers, GenericXMLElement, ConsumeUntil(ClosingTag))
     );
     private static IParser Spaces = AnyStringP(" \t");
 
