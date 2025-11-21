@@ -175,24 +175,6 @@ public class SpinnerParser
     }
 }
 
-public class SToken : IToken
-{
-    public IToken[] Children { get; init; } = [];
-    public Range Body { get; init; }
-
-    public string ToString(string source, int depth = 0)
-    {
-        var buffer = new StringBuilder();
-
-        var lfMark = $"{"".PadRight(4 * depth)}<Spinner>\n";
-        buffer.Append(string.Join('\n', Children.Select(el => el.ToString(source, depth + 1))));
-        var rgMark = $"\n{"".PadRight(4 * depth)}</Spinner>";
-
-        var body = $"{lfMark}{buffer}{rgMark}";
-        return body;
-    }
-}
-
 public enum ElementMode
 {
     MultiLine,
@@ -287,8 +269,6 @@ public class SpinnerElement : IParser
         );
     }
 }
-
-public enum SpinnerTokenType { }
 
 public class SpinnerToken : IToken
 {
