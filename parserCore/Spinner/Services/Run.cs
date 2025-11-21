@@ -3,7 +3,7 @@ using static spinner.Parser;
 
 namespace spinner;
 
-public class SpinnerRun : IParser
+public class ServiceLayerRunParser : IParser
 {
     private static IParser Run = new XMLSingleLineElementParser("Run");
     private static IParser Spaces = AnyStringP(" \t");
@@ -42,7 +42,7 @@ public class SpinnerRun : IParser
         }
 
         return ParseResult.SuccessAt(
-            new SpinnerRunToken()
+            new ServiceLayerRunToken()
             {
                 Body = seq.Body,
                 Command = command,
@@ -52,7 +52,7 @@ public class SpinnerRun : IParser
     }
 }
 
-public class SpinnerRunToken : IToken
+public class ServiceLayerRunToken : IToken
 {
     public Range Body { get; init; }
     public Range Command { get; init; }

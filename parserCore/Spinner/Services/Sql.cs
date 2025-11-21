@@ -2,7 +2,7 @@ using static spinner.Parser;
 
 namespace spinner;
 
-public class SpinnerSqlParser : IParser
+public class ServiceLayerSqlParser : IParser
 {
     private static IParser SQL = new XMLSingleLineElementParser("Sql");
 
@@ -43,11 +43,13 @@ public class SpinnerSqlParser : IParser
             throw new MissingKeyAttributeException(initialPosition);
         }
 
-        return ParseResult.SuccessAt(new SpinnerSqlToken() { Body = seq.Body, Source = source });
+        return ParseResult.SuccessAt(
+            new ServiceLayerSqlToken() { Body = seq.Body, Source = source }
+        );
     }
 }
 
-public class SpinnerSqlToken : IToken
+public class ServiceLayerSqlToken : IToken
 {
     public Range Body { get; init; }
     public Range Source { get; init; }

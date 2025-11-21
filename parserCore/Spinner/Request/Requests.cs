@@ -3,23 +3,25 @@ using static spinner.Parser;
 
 namespace spinner;
 
-internal class ServicesParser : IParser
+public class RequestsParser : IParser
 {
-    private static IParser ClosingTag = Seq(StringP("</"), StringP("Services"), Char('>'));
+    private static IParser ClosingTag = Seq(StringP("</"), StringP("Requests"), Char('>'));
     private static IParser Comment = new XMLCommentParser();
-    private static IParser Service = new ServiceParser();
     private static IParser GenericXMLElement = new XMLElemenParser(AlphaChar);
+    private static IParser Keys = new SpinnerKeyParser();
+    private static IParser Request = new RequestParser();
+
     private static IParser Body = ZeroPlus(
-        Choice(LineBreak, Comment, Service, GenericXMLElement, ConsumeUntil(ClosingTag))
+        Choice(LineBreak, Comment, Keys, Request, GenericXMLElement, ConsumeUntil(ClosingTag))
     );
     private static IParser Spaces = AnyStringP(" \t");
 
-    private static IParser ServicesBody = new XMLElemenParser("Services", Body);
-    private static IParser Services = Seq(Optional(Spaces), ServicesBody);
+    private static IParser RequestsBody = new XMLElemenParser("Requests", Body);
+    private static IParser Element = Seq(Optional(Spaces), RequestsBody);
 
     public ParseResult Parse(ParseContext context)
     {
-        var res = Services.Parse(context);
+        var res = Element.Parse(context);
         if (!res.Success)
         {
             return res;
@@ -29,23 +31,23 @@ internal class ServicesParser : IParser
         XMLElementToken xmlElement = (XMLElementToken)seq.Children[1];
 
         return ParseResult.SuccessAt(
-            new ServicesToken() { Body = xmlElement.Body, Children = xmlElement.Children }
+            new RequestsToken() { Body = xmlElement.Body, Children = xmlElement.Children }
         );
     }
 }
 
-public class ServicesToken : IToken
+public class RequestsToken : IToken
 {
-    public IToken[] Children { get; init; } = [];
     public Range Body { get; init; }
+    public IToken[] Children { get; init; } = [];
 
     public string ToString(string source, int depth = 0)
     {
         var buffer = new StringBuilder();
 
-        var lfMark = $"{"".PadRight(4 * depth)}<Services>\n";
+        var lfMark = $"{"".PadRight(4 * depth)}<Requests>\n";
         buffer.Append(string.Join('\n', Children.Select(el => el.ToString(source, depth + 1))));
-        var rgMark = $"\n{"".PadRight(4 * depth)}</Services>";
+        var rgMark = $"\n{"".PadRight(4 * depth)}</Requests>";
 
         var body = $"{lfMark}{buffer}{rgMark}";
         return body;

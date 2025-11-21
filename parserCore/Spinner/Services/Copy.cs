@@ -2,7 +2,7 @@ using static spinner.Parser;
 
 namespace spinner;
 
-public class SpinnerCopy : IParser
+public class ServiceLayerCopy : IParser
 {
     private static IParser Copy = new XMLSingleLineElementParser("Copy");
 
@@ -43,7 +43,7 @@ public class SpinnerCopy : IParser
         }
 
         return ParseResult.SuccessAt(
-            new SpinnerCopyToken()
+            new ServiceLayerCopyToken()
             {
                 Body = seq.Body,
                 Source = from,
@@ -53,7 +53,7 @@ public class SpinnerCopy : IParser
     }
 }
 
-public class SpinnerCopyToken : IToken
+public class ServiceLayerCopyToken : IToken
 {
     public Range Body { get; init; }
     public Range Source { get; init; }

@@ -3,10 +3,65 @@ using static spinner.Parser;
 
 namespace spinner;
 
+public class XML
+{
+    private static IParser Spaces = AnyStringP(" \t");
+
+    private static IParser GenericXMLElementSingleLine = new XMLSingleLineElementParser(AlphaChar);
+    private static IParser GenericXMLElementMultiLine = new XMLElemenParser(AlphaChar);
+    public static IParser GenericElement = Seq(
+        Optional(Spaces),
+        Choice(GenericXMLElementSingleLine, GenericXMLElementMultiLine)
+    );
+
+    public static IParser Text = new XMLText();
+
+    public static IParser ClosingTag(string name)
+    {
+        return Seq(
+            Seq(Char('<'), Optional(Spaces), Char('/'), Optional(Spaces)),
+            StringP(name),
+            Seq(Optional(Spaces), Char('>'))
+        );
+    }
+
+    public static IParser ClosingTag(IParser parser)
+    {
+        return Seq(
+            Seq(Char('<'), Optional(Spaces), Char('/'), Optional(Spaces)),
+            parser,
+            Seq(Optional(Spaces), Char('>'))
+        );
+    }
+}
+
+public class XMLText : IParser
+{
+    private static IParser Element = ConsumeUntil(XML.ClosingTag(AlphaChar));
+
+    public ParseResult Parse(ParseContext context)
+    {
+        int initialPosition = context.Position;
+
+        var res = Element.Parse(context);
+
+        if (!res.Success)
+        {
+            return res;
+        }
+
+        SequenceToken seq = (SequenceToken)res.Token;
+        TextToken text = (TextToken)seq.Children[0];
+
+        var lines = TextToken.Normalize(text.Body.ToString(context.Input), text.Body.Start);
+
+        return ParseResult.SuccessAt(new XMLTextToken() { Lines = lines });
+    }
+}
+
 internal class XMLElemenParser : IParser
 {
     private IParser OpenningTag;
-    private IParser ClosingTag;
     private IParser Body;
     private IParser TagWithBody;
     private static IParser Spaces = AnyStringP(" \t");
@@ -16,10 +71,16 @@ internal class XMLElemenParser : IParser
     {
         IParser strP = StringP(str);
         IParser attributes = new XMLAttributeParser();
-        OpenningTag = Seq(Char('<'), Seq(strP, attributes, Optional(Spaces)), Char('>'));
-        ClosingTag = Seq(StringP("</"), strP, Char('>'));
-        Body = ConsumeUntil(ClosingTag);
-        TagWithBody = Seq(OpenningTag, Body, ClosingTag);
+        OpenningTag = Seq(
+            Seq(Char('<'), Optional(Spaces)),
+            Seq(strP, attributes, Optional(Spaces)),
+            Char('>')
+        );
+
+        IParser closingTag = XML.ClosingTag(str);
+
+        Body = ConsumeUntil(closingTag);
+        TagWithBody = Seq(OpenningTag, Body, closingTag);
         Tag = TagWithBody;
     }
 
@@ -27,21 +88,36 @@ internal class XMLElemenParser : IParser
     {
         IParser strP = StringP(str);
         IParser attributes = new XMLAttributeParser();
-        OpenningTag = Seq(Char('<'), Seq(strP, attributes, Optional(Spaces)), Char('>'));
-        ClosingTag = Seq(StringP("</"), strP, Char('>'));
+        OpenningTag = Seq(
+            Seq(Char('<'), Optional(Spaces)),
+            Seq(strP, attributes, Optional(Spaces)),
+            Char('>')
+        );
+
+        IParser closingTag = XML.ClosingTag(str);
+
         Body = body;
-        TagWithBody = Seq(OpenningTag, Body, ClosingTag);
+        TagWithBody = Seq(OpenningTag, Body, closingTag);
         Tag = TagWithBody;
     }
 
     public XMLElemenParser(IParser marker)
     {
         IParser attributes = new XMLAttributeParser();
-        OpenningTag = Seq(Char('<'), Seq(marker, attributes, Optional(Spaces)), Char('>'));
-        ClosingTag = Seq(StringP("</"), marker, Char('>'));
+        OpenningTag = Seq(
+            Seq(Char('<'), Optional(Spaces)),
+            Seq(marker, attributes, Optional(Spaces)),
+            Char('>')
+        );
 
-        Body = ConsumeUntil(ClosingTag);
-        TagWithBody = Seq(OpenningTag, Body, ClosingTag);
+        var closingTag = Seq(
+            Seq(Char('<'), Optional(Spaces), Char('/'), Optional(Spaces)),
+            marker,
+            Seq(Optional(Spaces), Char('>'))
+        );
+
+        Body = ConsumeUntil(closingTag);
+        TagWithBody = Seq(OpenningTag, Body, closingTag);
         Tag = TagWithBody;
     }
 
@@ -61,13 +137,6 @@ internal class XMLElemenParser : IParser
         List<TextToken> texts = [];
         List<XMLCommentToken> comments = [];
         Unroll(res.Token, children, attributes, comments, texts);
-
-        if (IsElement(context, texts[1], "Run"))
-        {
-            var tx = texts[4];
-            var str = context.Input.AsSpan().Slice(tx.Body.Start, tx.Body.Length).ToString();
-            TextToken.Normalize(str, tx.Body.Start, children);
-        }
 
         var token = new XMLElementToken()
         {
@@ -99,19 +168,15 @@ internal class XMLElemenParser : IParser
                 for (int i = 0; i < tk.Tokens.Length; i++)
                 {
                     attributes.Add(tk.Tokens[i]);
-                    children.Add(tk.Tokens[i]);
                 }
-
                 break;
 
             case TextToken tk:
-
                 texts.Add(tk);
                 break;
 
             case XMLCommentToken tk:
                 comments.Add(tk);
-                children.Add(tk);
                 break;
 
             case SequenceToken seq:
@@ -129,6 +194,20 @@ internal class XMLElemenParser : IParser
                 children.Add(token);
                 break;
         }
+    }
+}
+
+public class XMLTextToken : IToken
+{
+    public Range Body { get; init; }
+    public TextToken[] Lines { get; init; } = [];
+
+    public string ToString(string source, int depth = 0)
+    {
+        var buffer = new StringBuilder();
+        buffer.Append(string.Join('\n', Lines.Select(el => el.ToString(source, depth))));
+        var body = $"{buffer}";
+        return body;
     }
 }
 

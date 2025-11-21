@@ -11,7 +11,25 @@ internal class XMLSingleLineElementParser : IParser
     {
         IParser attributes = new XMLAttributeParser();
         IParser strP = StringP(str);
-        SingleLineTag = Seq(Char('<'), Seq(strP, attributes, Optional(Spaces)), StringP("/>"));
+        var body = Seq(
+            Seq(Char('<'), Optional(Spaces)),
+            Seq(strP, attributes, Optional(Spaces)),
+            Seq(Char('/'), Optional(Spaces), Char('>'))
+        );
+
+        SingleLineTag = Seq(Optional(Spaces), body);
+    }
+
+    public XMLSingleLineElementParser(IParser marker)
+    {
+        IParser attributes = new XMLAttributeParser();
+        var body = Seq(
+            Seq(Char('<'), Optional(Spaces)),
+            Seq(marker, attributes, Optional(Spaces)),
+            Seq(Char('/'), Optional(Spaces), Char('>'))
+        );
+
+        SingleLineTag = Seq(Optional(Spaces), body);
     }
 
     public ParseResult Parse(ParseContext context)
@@ -30,14 +48,13 @@ internal class XMLSingleLineElementParser : IParser
         List<TextToken> texts = [];
         List<XMLCommentToken> comments = [];
 
+        //Console.WriteLine(res.ToString(context.Input));
         Unroll(res.Token, children, attributes, comments, texts);
 
         var token = new XMLElementToken()
         {
-            Children = children.ToArray(),
-            Name = texts[1].Body,
+            Name = texts[3].Body,
             Attributes = attributes.ToArray(),
-            Comments = comments.ToArray(),
         };
 
         return ParseResult.SuccessAt(token);
@@ -57,7 +74,6 @@ internal class XMLSingleLineElementParser : IParser
                 for (int i = 0; i < tk.Tokens.Length; i++)
                 {
                     attributes.Add(tk.Tokens[i]);
-                    children.Add(tk.Tokens[i]);
                 }
 
                 break;
@@ -68,7 +84,6 @@ internal class XMLSingleLineElementParser : IParser
 
             case XMLCommentToken tk:
                 comments.Add(tk);
-                children.Add(tk);
                 break;
 
             case SequenceToken seq:

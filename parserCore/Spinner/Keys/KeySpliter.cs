@@ -17,6 +17,6 @@ internal class KeySpliter : IParser
         List<IToken> tk = [];
         KeyParser.Unroll(res.Token, tk);
 
-        return ParseResult.SuccessAt(new KeysToken() { Tokens = tk.ToArray() });
+        return ParseResult.SuccessAt(new KeyToken() { Tokens = tk.ToArray() });
     }
 }

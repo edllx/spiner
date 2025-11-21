@@ -35,7 +35,7 @@ public class KeyParser
     }
 }
 
-public class KeysToken : IToken
+public class KeyToken : IToken
 {
     public Range Body { get; init; }
     public IToken[] Tokens { get; init; } = [];

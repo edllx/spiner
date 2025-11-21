@@ -12,7 +12,7 @@
 
       <Layer name="celsius10" from="base-schema">
         <Copy source="./database/Config/celsius10.sql" dest="/scripts"/>
-        <Run command="psql -U ${POSTGRES_USER} -f /script/celsius10.sql" />
+        <Run command="psql -U {POSTGRES_USER} -f /script/celsius10.sql" />
       </Layer>
 
       <Layer name="bothfandc" from="fahrenheit10,celsius10" >

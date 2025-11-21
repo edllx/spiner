@@ -3,37 +3,26 @@ using static spinner.Parser;
 
 namespace spinner;
 
-public class ServiceLayerParser : IParser
+public class RequestParser : IParser
 {
-    private static IParser ClosingTag = Seq(StringP("</"), StringP("Layer"), Char('>'));
+    private static IParser SingleLineRequest = new XMLSingleLineElementParser("Request");
+    private static IParser ClosingTag = Seq(StringP("</"), StringP("Request"), Char('>'));
     private static IParser Comment = new XMLCommentParser();
     private static IParser GenericXMLElement = new XMLElemenParser(AlphaChar);
     private static IParser Keys = new SpinnerKeyParser();
-    private static IParser Copy = new ServiceLayerCopy();
-    private static IParser Run = new ServiceLayerRunParser();
-    private static IParser SQL = new ServiceLayerSqlParser();
+    private static IParser BBody = new RequestBodyParser();
 
     private static IParser Body = ZeroPlus(
-        Choice(
-            LineBreak,
-            Comment,
-            Keys,
-            Copy,
-            Run,
-            SQL,
-            GenericXMLElement,
-            ConsumeUntil(ClosingTag)
-        )
+        Choice(LineBreak, Comment, Keys, BBody, GenericXMLElement, ConsumeUntil(ClosingTag))
     );
     private static IParser Spaces = AnyStringP(" \t");
 
-    private static IParser ServiceBody = new XMLElemenParser("Layer", Body);
-    private static IParser Service = Seq(Optional(Spaces), ServiceBody);
+    private static IParser RequestsBody = new XMLElemenParser("Request", Body);
+    private static IParser Element = Seq(Optional(Spaces), Choice(SingleLineRequest, RequestsBody));
 
     public ParseResult Parse(ParseContext context)
     {
-        int initialPosition = context.Position;
-        var res = Service.Parse(context);
+        var res = Element.Parse(context);
         if (!res.Success)
         {
             return res;
@@ -43,29 +32,29 @@ public class ServiceLayerParser : IParser
         XMLElementToken xmlElement = (XMLElementToken)seq.Children[1];
 
         return ParseResult.SuccessAt(
-            new ServiceLayerToken()
+            new RequestToken()
             {
-                Body = xmlElement.Body,
                 Attributes = xmlElement.Attributes,
+                Body = xmlElement.Body,
                 Children = xmlElement.Children,
             }
         );
     }
 }
 
-public class ServiceLayerToken : IToken
+public class RequestToken : IToken
 {
-    public IToken[] Children { get; init; } = [];
-    public XMLAttributeToken[] Attributes { get; init; } = [];
     public Range Body { get; init; }
+    public XMLAttributeToken[] Attributes { get; init; } = [];
+    public IToken[] Children { get; init; } = [];
 
     public string ToString(string source, int depth = 0)
     {
         var buffer = new StringBuilder();
 
-        var lfMark = $"{"".PadRight(4 * depth)}<Layer>\n";
+        var lfMark = $"{"".PadRight(4 * depth)}<Request>\n";
         buffer.Append(string.Join('\n', Children.Select(el => el.ToString(source, depth + 1))));
-        var rgMark = $"\n{"".PadRight(4 * depth)}</Layer>";
+        var rgMark = $"\n{"".PadRight(4 * depth)}</Request>";
 
         var body = $"{lfMark}{buffer}{rgMark}";
         return body;

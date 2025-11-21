@@ -8,6 +8,24 @@ public struct Range
     public int Length { get; init; }
     public int End => Start + Length;
 
+    public string ToString(string source)
+    {
+        if (source.Length <= Length)
+        {
+            return "";
+        }
+        return source.AsSpan().Slice(Start, Length).ToString();
+    }
+
+    public string ToString(ParseContext context)
+    {
+        if (context.Input.Length <= Length)
+        {
+            return "";
+        }
+        return context.Input.AsSpan().Slice(Start, Length).ToString();
+    }
+
     public override string ToString()
     {
         return $"[{Start} - {End}]";
@@ -99,6 +117,15 @@ public struct ParseResult(bool success)
             return "";
         }
         return Token.ToString(source, depth);
+    }
+
+    public string ToString(ParseContext context, int depth = 0)
+    {
+        if (Token is null)
+        {
+            return "";
+        }
+        return Token.ToString(context.Input, depth);
     }
 
     public static ParseResult FailAt(IToken token) => new ParseResult(false) { Token = token };

@@ -5,7 +5,7 @@
       <Key name="POSTGRES_USER" value="spiner" />
       <GeneratedKey name="POSTGRES_PASSWORD" len="32" />
       <GeneratedKey name="POSTGRES_DB" len="10" />
-      <Key name="DB_CONNECTION_STRING" value="Server=${CONTAINER_NAME};Port=5432;Database=${POSTGRES_DB};User ID=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"/>
+      <Key name="DB_CONNECTION_STRING" value="Server={CONTAINER_NAME};Port=5432;Database={POSTGRES_DB};User ID={POSTGRES_USER};Password={POSTGRES_PASSWORD};"/>
 
       <Layer name="base-schema" >
         <Sql source="./database/Config/schema.sql"/>
@@ -17,7 +17,7 @@
 
       <Layer name="celsius10" from="base-schema">
         <Copy source="./database/Config/celsius10.sql" dest="/scripts"/>
-        <Run command="psql -U ${POSTGRES_USER} -f /script/celsius10.sql" />
+        <Run command="psql -U {POSTGRES_USER} -f /script/celsius10.sql" />
       </Layer>
 
       <Layer name="bothfandc" from="fahrenheit10,celsius10" >
@@ -26,18 +26,18 @@
           echo multiline command
         </Run>
       </Layer>
-    </Service>
+    </Service  >
 
     <Service name="api" build="./API.Dockerfile">
       <Key name="DB_CONNECTION_STRING"/>
     </Service>
   </Services>
 
-  <!--Define the structure of each enpoint-->
+  <!--Define the structure of each request-->
   <Requests>
     <Request name="getall" method="GET" path="weather"/>
 
-    <Request name="get" method="GET" path="weather/${id}">
+    <Request name="get" method="GET" path="weather/{id}">
       <Key name="id"/>
     </Request>
 
@@ -46,20 +46,20 @@
       <Key name="type"/>
 
       <Body type="json">
-        <Key name="temperature" value="${temperature}"/>
-        <Key name="type" value="${type}"/>
+        <Key name="temperature" value="{temperature}"/>
+        <Key name="type" value="{type}"/>
       </Body>
 
     </Request>
 
-    <Request name="patch" method="PATCH" path="weather/${id}">
+    <Request name="patch" method="PATCH" path="weather/{id}">
       <Key name="id"/>
       <Key name="temperature"/>
       <Key name="type"/>
 
       <Body type="json">
-        <Key name="temperature" value="${temperature}"/>
-        <Key name="type" value="${type}"/>
+        <Key name="temperature" value="{temperature}"/>
+        <Key name="type" value="{type}"/>
       </Body>
     </Request>
   </Requests>
@@ -77,8 +77,8 @@
         <Request name="getall"/>
         <Asserts>
           <NotNull key="Response.Content"/>
-          <Equals actual="${Response.Content.Type}" expected="Array"/>
-          <Equals actual="${Response.Content.Len}" expected="3"/>
+          <Equals actual="{Response.Content.Type}" expected="Array"/>
+          <Equals actual="{Response.Content.Len}" expected="3"/>
         </Asserts>
       </Test>
 
@@ -87,14 +87,14 @@
         <Key name="type" value="Celsius"/>
 
         <Request name="add">
-          <Arg name="temperature" value="${temperature}"/>
-          <Arg name="temperature" value="${type}"/>
+          <Arg name="temperature" value="{temperature}"/>
+          <Arg name="temperature" value="{type}"/>
         </Request>
 
         <Asserts>
           <NotNull key="Response.Content"/>
-          <Equals actual="${Response.Content.Type}" expected="Object"/>
-          <Equals actual="${Response.Content.temperatureC}" expected="${temperature}"/>
+          <Equals actual="{Response.Content.Type}" expected="Object"/>
+          <Equals actual="{Response.Content.temperatureC}" expected="{temperature}"/>
         </Asserts>
       </Test>
 
@@ -102,8 +102,8 @@
         <Request name="getall"/>
         <Asserts>
           <NotNull key="Response.Content"/>
-          <Equals actual="${Response.Content.Type}" expected="Array"/>
-          <Equals actual="${Response.Content.Len}" expected="4"/>
+          <Equals actual="{Response.Content.Type}" expected="Array"/>
+          <Equals actual="{Response.Content.Len}" expected="4"/>
         </Asserts>
       </Test>
     </Tests>

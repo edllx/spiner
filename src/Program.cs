@@ -8,7 +8,12 @@ string fileContent = """
   <!--Define the structure of each services-->
   <Services>
     <Service name="db" image="potgress:17">
-      <Layer name="base-schema">
+      <Key name="POSTGRES_USER" value="spiner" />
+      <GeneratedKey name="POSTGRES_PASSWORD" len="32" />
+      <GeneratedKey name="POSTGRES_DB" len="10" />
+      <Key name="DB_CONNECTION_STRING" value="Server={CONTAINER_NAME};Port=5432;Database={POSTGRES_DB};User ID={POSTGRES_USER};Password={POSTGRES_PASSWORD};"/>
+
+      <Layer name="base-schema" >
         <Sql source="./database/Config/schema.sql"/>
       </Layer>
 
@@ -18,29 +23,113 @@ string fileContent = """
 
       <Layer name="celsius10" from="base-schema">
         <Copy source="./database/Config/celsius10.sql" dest="/scripts"/>
-        <Run command="psql -U ${POSTGRES_USER} -f /script/celsius10.sql" />
+        <Run command="psql -U {POSTGRES_USER} -f /script/celsius10.sql" />
       </Layer>
 
       <Layer name="bothfandc" from="fahrenheit10,celsius10" >
         <Run>
-
           echo multiline command
-
           echo multiline command
-
         </Run>
       </Layer>
     </Service>
 
+    <Service name="api" build="./API.Dockerfile">
+      <Key name="DB_CONNECTION_STRING"/>
+    </Service>
   </Services>
+
+  <!--Define the structure of each request-->
+  <Requests>
+    <Request name="getall" method="GET" path="weather"/>
+
+    <Request name="get" method="GET" path="weather/{id}">
+      <Key name="id"/>
+    </Request>
+
+    <Request name="add" method="POST" path="weather/add">
+      <Key name="temperature"/>
+      <Key name="type"/>
+
+      <Body type="json">
+        <Key name="temperature" value="{temperature}"/>
+        <Key name="type" value="{type}"/>
+      </Body>
+
+    </Request>
+
+    <Request name="patch" method="PATCH" path="weather/{id}">
+      <Key name="id"/>
+      <Key name="temperature"/>
+      <Key name="type"/>
+
+      <Body type="json">
+        <Key name="temperature" value="{temperature}"/>
+        <Key name="type" value="{type}"/>
+      </Body>
+    </Request>
+  </Requests>
+
+  <TestSuite>
+    <Stack>
+      <Service name="db" layer="fahrenheit10"/>
+      <Service name="api">
+        <Arg name="DB_CONNECTION_STRING" from="db" key="DB_CONNECTION_STRING"/>
+      </Service>
+    </Stack>
+
+    <Tests mode="sync">
+      <Test>
+        <Request name="getall"/>
+        <Asserts>
+          <NotNull key="Response.Content"/>
+          <Equals actual="{Response.Content.Type}" expected="Array"/>
+          <Equals actual="{Response.Content.Len}" expected="3"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Key name="temperature" value="30"/>
+        <Key name="type" value="Celsius"/>
+
+        <Request name="add">
+          <Arg name="temperature" value="{temperature}"/>
+          <Arg name="temperature" value="{type}"/>
+        </Request>
+
+        <Asserts>
+          <NotNull key="Response.Content"/>
+          <Equals actual="{Response.Content.Type}" expected="Object"/>
+          <Equals actual="{Response.Content.temperatureC}" expected="{temperature}"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="getall"/>
+        <Asserts>
+          <NotNull key="Response.Content"/>
+          <Equals actual="{Response.Content.Type}" expected="Array"/>
+          <Equals actual="{Response.Content.Len}" expected="4"/>
+        </Asserts>
+      </Test>
+    </Tests>
+  </TestSuite>
+
 </Spinner>
 """;
 
 SpinnerParser spinner = new();
 
-//var st = "          echo multiline command\n          echo multiline command";
+var st = " <!--Define the structure of each request-->";
 
-//var r = TextToken.Normalize(st, 0);
+/*
+var st = """
+<!--Define the structure of each request-->
+""";
+*/
+
+//var res = p.Parse(new ParseContext(st));
 
 var res = spinner.Parse(fileContent);
 Console.WriteLine(res.ToString(fileContent));
+//Console.WriteLine(XML.GenericElement.Parse(new(st)).ToString(st));
