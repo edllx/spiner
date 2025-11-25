@@ -2,36 +2,6 @@ using System.Text;
 
 namespace spinner;
 
-public class Key
-{
-    public string Name { get; init; }
-    public string Value { get; private set; }
-    public bool Resolved { get; private set; }
-
-    public Key(string name, string value)
-    {
-        Name = name;
-        Value = value;
-    }
-
-    public void Resolve(string value)
-    {
-        if (Resolved)
-        {
-            return;
-        }
-
-        Value = value;
-
-        Resolved = true;
-    }
-
-    public override string ToString()
-    {
-        return $"{Name} : {Value}";
-    }
-}
-
 public class MissingKeyException(string keyName) : Exception($"Missing Key: {keyName}") { }
 
 public class DuplicateKeyException(string keyName) : Exception($"Duplicate Key: {keyName}") { }

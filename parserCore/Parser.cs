@@ -8,6 +8,14 @@ public struct Range
     public int Length { get; init; }
     public int End => Start + Length;
 
+    public Range() { }
+
+    public Range(int start, int length)
+    {
+        Start = start;
+        Length = length;
+    }
+
     public string ToString(string source)
     {
         if (source.Length <= Length)
@@ -184,6 +192,9 @@ public static class Parser
     public static IParser StringP(string str) => new StringParser(str);
 
     public static IParser AnyStringP(string str) => new AnyStringParser(str);
+
+    public static IParser StringLiteral => new StringLiteralParser();
+    public static IParser NestedStringLiteral => new StringLiteralNestedParser();
 }
 
 public static class TypeExtensions

@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include=".\Files\**\*" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include=".\Files\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\parserCore\parserCore.csproj" />
+    <ProjectReference Include="..\src\src.csproj" />
   </ItemGroup>
     
 </Project>

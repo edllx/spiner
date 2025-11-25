@@ -17,6 +17,12 @@ public class SpinnerParser
         IsAttributeAllowed = true,
     };
 
+    private static SpinnerElement Set = new("Set")
+    {
+        Mode = ElementMode.SingleLine,
+        IsAttributeAllowed = true,
+    };
+
     private static SpinnerElement LayerSQL = new("Sql")
     {
         Mode = ElementMode.SingleLine,
@@ -124,11 +130,18 @@ public class SpinnerParser
         AllowedChildElements = [AssertNotNull, AssertEquals],
     };
 
+    private static SpinnerElement TestResponse = new("Response")
+    {
+        Mode = ElementMode.MultiLine,
+        IsAttributeAllowed = false,
+        AllowedChildElements = [Set],
+    };
+
     private static SpinnerElement Test = new("Test")
     {
         Mode = ElementMode.MultiLine,
         IsAttributeAllowed = false,
-        AllowedChildElements = [SpinnerKey, TestRequest, Asserts],
+        AllowedChildElements = [SpinnerKey, TestRequest, TestResponse, Asserts],
     };
 
     private static SpinnerElement Tests = new("Tests")

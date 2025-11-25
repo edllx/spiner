@@ -1,3 +1,5 @@
+using static spinner.Parser;
+
 namespace spinner;
 
 public class StringParser(string str) : IParser
@@ -107,5 +109,62 @@ public class AlphaCharParser : IParser
                 },
             }
         );
+    }
+}
+
+public class StringLiteralParser : IParser
+{
+    private static IParser Element = Seq(Char('"'), PrintableChar("\""), Char('"'));
+
+    public ParseResult Parse(ParseContext context)
+    {
+        int initialPosition = context.Position;
+
+        var res = Element.Parse(context);
+
+        if (!res.Success)
+        {
+            return res;
+        }
+
+        SequenceToken seq = (SequenceToken)res.Token;
+
+        return ParseResult.SuccessAt(
+            new StringLiteralToken() { Body = seq.Body, Value = seq.Children[1].Body }
+        );
+    }
+}
+
+public class StringLiteralNestedParser : IParser
+{
+    private static IParser Element = Seq(Char('\''), PrintableChar("'"), Char('\''));
+
+    public ParseResult Parse(ParseContext context)
+    {
+        int initialPosition = context.Position;
+
+        var res = Element.Parse(context);
+
+        if (!res.Success)
+        {
+            return res;
+        }
+
+        SequenceToken seq = (SequenceToken)res.Token;
+
+        return ParseResult.SuccessAt(
+            new StringLiteralToken() { Body = seq.Body, Value = seq.Children[1].Body }
+        );
+    }
+}
+
+public class StringLiteralToken : IToken
+{
+    public Range Body { get; init; }
+    public Range Value { get; init; }
+
+    public string ToString(string source, int depth = 0)
+    {
+        return $"{"".PadRight(4 * depth)}<String value=\"{Value.ToString(source)}\">\n";
     }
 }

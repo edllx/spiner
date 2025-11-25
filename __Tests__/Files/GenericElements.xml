@@ -6,7 +6,7 @@
   <Services>
 
     <!--Services Comment -->
-    <Service name="db" image="postgres:17">
+    <Service name="db" image="postgres:17\">
       <Key name="POSTGRES_USER" value="spiner" />
 
       <!--Service Comment -->

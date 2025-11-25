@@ -1,5 +1,40 @@
 namespace spinner;
 
+public class Key
+{
+    public string Name { get; init; }
+    public string Value { get; private set; }
+    public bool Resolved { get; private set; }
+
+    public Key(string name, string value)
+    {
+        Name = name;
+        Value = value;
+    }
+
+    public void Set(string value)
+    {
+        Value = value;
+    }
+
+    public void Resolve(string value)
+    {
+        if (Resolved)
+        {
+            return;
+        }
+
+        Value = value;
+
+        Resolved = true;
+    }
+
+    public override string ToString()
+    {
+        return $"{Name} : {Value}";
+    }
+}
+
 public class KeyParser
 {
     public static readonly IParser SpinnerKey = new KeyDetector();
