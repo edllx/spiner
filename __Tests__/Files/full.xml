@@ -78,9 +78,8 @@
         <Request name="getall"/>
         <Asserts>
           <!-- Response is a contextual variable to each test-->
-          <NotNull key="Response.Content"/>
-          <Equals actual="{{Response.Json#type}}" expected="array"/>
-          <Equals actual="{{Response.json#length}}" expected="3"/>
+          <Equals actual="{{response.Json#type}}" expected="array"/>
+          <Equals actual="{{response.json#length}}" expected="3"/>
         </Asserts>
       </Test>
 
@@ -94,11 +93,10 @@
         </Request>
 
         <Response>
-          <Set key="id" value="{{Response.Content.id}"/>
+          <Set key="id" value="{{response.Json['id']}"/>
         </Response>
 
         <Asserts>
-          <NotNull key="Response.Content"/>
           <Equals actual="{{response.Json#type}}" expected="object"/>
           <Equals actual="{{response.Json['temperatureC']}}" expected="{{temperature}}"/>
         </Asserts>
@@ -107,9 +105,8 @@
       <Test>
         <Request name="getall"/>
         <Asserts>
-          <NotNull key="Response.Content"/>
-          <Equals actual="{{Response.Content.Type}}" expected="Array"/>
-          <Equals actual="{{Response.Content.Len}}" expected="4"/>
+          <Equals actual="{{response.Json#type}}" expected="array"/>
+          <Equals actual="{{response.Json#length}}" expected="4"/>
         </Asserts>
       </Test>
     </Tests>

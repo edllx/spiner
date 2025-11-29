@@ -46,6 +46,8 @@ public partial class PodmanService : IContainerService
                 Console.WriteLine(result.StdErr);
                 break;
         }
+
+        await Task.CompletedTask;
     }
 
     private async Task ExecCommandAsyncCommit(
@@ -196,7 +198,7 @@ public partial class PodmanService : IContainerService
 
     public async Task StopContainerAsync(string containerId)
     {
-        throw new NotImplementedException();
+        await Task.CompletedTask;
     }
 }
 

@@ -1,10 +1,11 @@
 using System.Text;
-namespace spinner;
 
+namespace spinner;
 
 public class SequenceParser(params IParser[] parsers) : IParser
 {
     public ParserType Type { get; set; } = ParserType.Sequence;
+
     public ParseResult Parse(ParseContext context)
     {
         int initialPosition = context.Position;
@@ -19,7 +20,9 @@ public class SequenceParser(params IParser[] parsers) : IParser
                 int at = context.Position;
                 context.Position = initialPosition;
 
-                return ParseResult.FailAt(new ParseFailedToken(initialPosition, parsers[i]) { At = at });
+                return ParseResult.FailAt(
+                    new ParseFailedToken(initialPosition, parsers[i]) { At = at }
+                );
             }
 
             if (result.Token is not DefaultToken && result.Token is not EOFToken)
@@ -28,7 +31,16 @@ public class SequenceParser(params IParser[] parsers) : IParser
             }
         }
 
-        return ParseResult.SuccessAt(new SequenceToken(values.ToArray()) { Body = new() { Start = initialPosition, Length = context.Position - initialPosition } });
+        return ParseResult.SuccessAt(
+            new SequenceToken(values.ToArray())
+            {
+                Body = new()
+                {
+                    Start = initialPosition,
+                    Length = context.Position - initialPosition,
+                },
+            }
+        );
     }
 }
 
@@ -47,5 +59,10 @@ public struct SequenceToken(IToken[] childen) : IToken
 
         var body = $"{lfMark}{buffer}{rgMark}";
         return body;
+    }
+
+    public string ToString(ParseContext context)
+    {
+        return ToString(context.Input);
     }
 }

@@ -36,7 +36,7 @@ public class Service : IDisposable
     public required string Name { get; init; }
     public required string Image { get; init; }
     public Scope Scope { get; init; }
-    private bool IsLayerApplyed;
+    private bool IsLayerApplyed = false;
     private ServiceState State = ServiceState.Uninitialized;
 
     public Service(Scope parentScope)
@@ -60,6 +60,7 @@ public class Service : IDisposable
         Console.WriteLine("Building Container");
 
         State = ServiceState.Stoped;
+        await Task.CompletedTask;
     }
 
     public async Task ApplyLayer(Layer layer)
@@ -71,6 +72,7 @@ public class Service : IDisposable
 
         Console.WriteLine("Appling layer");
 
+        await Task.CompletedTask;
         // execute setup scripts
     }
 
@@ -86,6 +88,7 @@ public class Service : IDisposable
         // start container
 
         State = ServiceState.Running;
+        await Task.CompletedTask;
     }
 
     public async Task Stop()
@@ -98,6 +101,7 @@ public class Service : IDisposable
         // stop container
 
         State = ServiceState.Stoped;
+        await Task.CompletedTask;
     }
 
     public async Task Clean()
@@ -112,6 +116,7 @@ public class Service : IDisposable
         // delete container
 
         State = ServiceState.Disposed;
+        await Task.CompletedTask;
     }
 
     public void Dispose()

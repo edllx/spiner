@@ -16,9 +16,14 @@ public struct Range
         Length = length;
     }
 
+    public bool IsSet()
+    {
+        return Length > 0;
+    }
+
     public string ToString(string source)
     {
-        if (source.Length <= Length)
+        if (source.Length < Length)
         {
             return "";
         }
@@ -113,10 +118,15 @@ public class ParseContext
     }
 }
 
-public struct ParseResult(bool success)
+public struct ParseResult
 {
-    public bool Success { get; init; } = success;
+    public bool Success { get; init; }
     public IToken Token { get; set; } = new DefaultToken();
+
+    public ParseResult(bool success)
+    {
+        Success = success;
+    }
 
     public string ToString(string source, int depth = 0)
     {

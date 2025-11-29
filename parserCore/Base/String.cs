@@ -8,6 +8,14 @@ public class StringParser(string str) : IParser
     {
         int initialPosition = context.Position;
 
+        if (!context.HasNext())
+        {
+            context.Position = initialPosition;
+            return ParseResult.FailAt(
+                new ParseFailedToken(initialPosition, this) { At = initialPosition }
+            );
+        }
+
         for (int i = 0; context.HasNext() && i < str.Length; i++, context.Position++)
         {
             if (context.Input[context.Position] != str[i])
@@ -32,9 +40,22 @@ public class AnyStringParser(string candidate) : IParser
     {
         int initialPosition = context.Position;
 
+        if (!context.HasNext())
+        {
+            context.Position = initialPosition;
+            return ParseResult.FailAt(
+                new ParseFailedToken(initialPosition, this) { At = initialPosition }
+            );
+        }
+
         while (context.HasNext() && candidate.Contains(context.Input[context.Position]))
         {
             context.Position++;
+        }
+
+        if (context.Position == initialPosition)
+        {
+            new ParseFailedToken(initialPosition, this) { At = initialPosition };
         }
 
         return ParseResult.SuccessAt(
@@ -56,6 +77,14 @@ public class PrintableCharParser(string exclude) : IParser
     {
         int initialPosition = context.Position;
 
+        if (!context.HasNext())
+        {
+            context.Position = initialPosition;
+            return ParseResult.FailAt(
+                new ParseFailedToken(initialPosition, this) { At = initialPosition }
+            );
+        }
+
         char target = context.Input[context.Position];
 
         while (
@@ -65,6 +94,13 @@ public class PrintableCharParser(string exclude) : IParser
         )
         {
             context.Position++;
+        }
+
+        if (context.Position == initialPosition)
+        {
+            return ParseResult.FailAt(
+                new ParseFailedToken(initialPosition, this) { At = initialPosition }
+            );
         }
 
         return ParseResult.SuccessAt(
@@ -85,6 +121,14 @@ public class AlphaCharParser : IParser
     public ParseResult Parse(ParseContext context)
     {
         int initialPosition = context.Position;
+
+        if (!context.HasNext())
+        {
+            context.Position = initialPosition;
+            return ParseResult.FailAt(
+                new ParseFailedToken(initialPosition, this) { At = initialPosition }
+            );
+        }
 
         char target = context.Input[context.Position];
 
