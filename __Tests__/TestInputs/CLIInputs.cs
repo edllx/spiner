@@ -84,11 +84,14 @@ public partial class TestInputs
                 ],
             },
         },
+        // TODO Add subcommand test/implementation when needed
     ];
 
     public static IEnumerable<object[]> AppInitShouldThrow =
     [
         new object[] { "run -x", new UnknownOptionExeption("x") },
+        new object[] { "runx", new UnknownCommandExeption("runx") },
+        new object[] { "run", new MissingCommandArgument("input file") },
         new object[] { "run -f ", new MissingOptionArgument("f") },
         new object[] { "run -f", new MissingOptionArgument("f") },
         new object[] { "run -o ./logfile.txt", new MissingCommandArgument("input file") },

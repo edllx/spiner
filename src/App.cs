@@ -5,7 +5,6 @@ public class App
     private string Args = "";
     private CLIArgParser Parser = new();
     private string _inputFile = "";
-    private CommandType Command { get; set; } = CommandType.Unknown;
     private List<(string, string)> Options = [];
     private List<string> Path = [];
     public string ErrorMessage = "";

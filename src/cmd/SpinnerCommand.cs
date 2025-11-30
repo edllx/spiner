@@ -10,8 +10,6 @@ public class CLIArgParser : IParser
         alias: "h"
     );
 
-    //private static CLIOption XCat = new("xcat", "Get more information on the command", alias: "x");
-
     private static CLIOption RunOutputFile = new(
         "output-file",
         "Redirect output to this file",
@@ -25,17 +23,6 @@ public class CLIArgParser : IParser
         alias: "f",
         arg: new("file", type: CLIArgType.String, required: true)
     );
-
-    /*
-    private static CLICommand Dog = new("dog", "Test nested command", options: [HelpOption]);
-
-    private static CLICommand Cat = new(
-        "cat",
-        "Test nested command",
-        options: [HelpOption, XCat],
-        subCommands: [Dog]
-    );
-    */
 
     public static CLICommand Run = new(
         "run",
@@ -69,20 +56,9 @@ public class CLIArgParser : IParser
 
         return ParseResult.SuccessAt(choice.Token);
     }
-
-    public string Help(CommandType command)
-    {
-        switch (command)
-        {
-            case CommandType.Run:
-                return Run.Help();
-
-            default:
-                return Spinner.Help();
-        }
-    }
 }
 
+/*
 public enum CommandType
 {
     Unknown,
@@ -101,3 +77,4 @@ public class SpinnerArgToken : IToken
         return $"{"".PadRight(4 * depth)}<{Command} Arg=\"{Arg.ToString(source)}\" Options\"{string.Join(",", Options.Select(v => v.ToString(source)))}\"/>";
     }
 }
+*/
