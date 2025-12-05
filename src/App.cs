@@ -7,15 +7,16 @@ public interface Iresovable
 
 public partial class App
 {
-    private string Args = "";
+    public string Args { get; } = "";
     private CLIArgParser Parser = new();
     private string _inputFile = "";
     private List<(string, string)> Options = [];
     private List<string> Path = [];
     public string ErrorMessage = "";
-    public ServiceManager ServiceManager { get; private set; } = new();
-    public RequestManager RequestsManager { get; private set; } = new();
-    public TestsManager TestManager { get; private set; } = new();
+
+    public ServiceManager ServiceManager { get; set; } = new();
+    public RequestManager RequestsManager { get; set; } = new();
+    public TestsManager TestManager { get; set; } = new();
 
     public App(string args)
     {
@@ -153,7 +154,6 @@ public partial class App
         }
 
         TestManager.SetTemplates(testSuites);
-        Console.WriteLine(ToString());
     }
 
     public override string ToString()
@@ -332,7 +332,7 @@ public partial class App
                                 name,
                                 image: image,
                                 buildPath: buildPath,
-                                layers: layers.ToArray(),
+                                layers: Layer.ResolveLayer(layers.ToArray()),
                                 scope: new(serviceTemplateKeys.ToArray())
                             );
 
@@ -367,7 +367,6 @@ public partial class App
 
                                 if (string.IsNullOrEmpty(src) || string.IsNullOrEmpty(dest))
                                 {
-                                    //return default(T);
                                     continue;
                                 }
 
@@ -415,11 +414,13 @@ public partial class App
                                 {
                                     return default(T);
                                 }
-                                layerCommands.Add(new Copy(src, "/srcipts"));
+                                layerCommands.Add(new Copy(src, "/scripts"));
                                 var filename = src.Split("/").Last().ToString();
                                 // TODO Support other sql dialect
                                 layerCommands.Add(
-                                    new Run("psql -U {{POSTGRES_USER}} " + $"-f /script/{filename}")
+                                    new Run(
+                                        "psql -U {{POSTGRES_USER}} " + $"-f /scripts/{filename}"
+                                    )
                                 );
                                 break;
                         }
@@ -698,10 +699,6 @@ public partial class App
                     // Set body values using request Args
                     List<Key> testRequestkeys = GenerateComponent<List<Key>>(token, source) ?? [];
 
-                    Console.WriteLine(
-                        $"> {testRequestBody.ToString(0)}\n{string.Join(", ", testRequestBody.Keys.Select(v => v.ToString()))}\n{string.Join(", ", testRequestkeys.Select(v => v.ToString()))}  "
-                    );
-
                     for (int i = 0; i < testRequestkeys.Count; i++)
                     {
                         var k = testRequestBody.Keys.FirstOrDefault(v =>
@@ -712,7 +709,6 @@ public partial class App
                         {
                             continue;
                         }
-                        Console.WriteLine(k);
                         k.Value = testRequestkeys[i].Value;
                     }
 

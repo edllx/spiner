@@ -4,7 +4,7 @@ namespace spinner;
 
 public class ServiceManager
 {
-    private List<ServiceTemplate> Templates = [];
+    public List<ServiceTemplate> Templates { get; set; } = [];
 
     public void SetTemplates(List<ServiceTemplate>? templates)
     {

@@ -49,7 +49,6 @@
         <Key name="temperature" value="{{temperature}}"/>
         <Key name="type" value="{{type}}"/>
       </Body>
-
     </Request>
 
     <Request name="patch" method="PATCH" path="weather/{{id}}">
@@ -58,6 +57,7 @@
       <Key name="type"/>
 
       <Body type="json">
+        <Key name="id" value="{{temperature}}"/>
         <Key name="temperature" value="{{temperature}}"/>
         <Key name="type" value="{{type}}"/>
       </Body>
@@ -74,6 +74,9 @@
 
     <Tests mode="sync">
       <Key name="id" />
+      <Key name="temperature" value="105"/>
+      <Key name="type" value="Celsius"/>
+
       <Test>
         <Request name="getall"/>
         <Asserts>
@@ -84,9 +87,6 @@
       </Test>
 
       <Test>
-        <Key name="temperature" value="105"/>
-        <Key name="type" value="Celsius"/>
-
         <Request name="add">
           <Arg name="temperature" value="{{temperature}}"/>
           <Arg name="temperature" value="{{type}}"/>
@@ -103,12 +103,38 @@
       </Test>
 
       <Test>
+        <Request name="get">
+          <Arg name="id" value="{{id}}"/>
+        </Request>
+
+        <Asserts>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="path">
+          <Arg name="id" value="{{id}}"/>
+          <Arg name="temperature" value="50"/>
+          <Arg name="temperature" value="{{type}}"/>
+        </Request>
+
+        <Asserts>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['id']}}" expected="{{id}}"/>
+        </Asserts>
+      </Test>
+
+      <Test>
         <Request name="getall"/>
         <Asserts>
+          <!-- Response is a contextual variable to each test-->
           <Equals actual="{{response['json']#type}}" expected="array"/>
           <Equals actual="{{response['json']#length}}" expected="4"/>
         </Asserts>
       </Test>
+
     </Tests>
   </TestSuite>
 

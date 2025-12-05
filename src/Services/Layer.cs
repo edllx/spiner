@@ -6,7 +6,14 @@ public class Layer : Iresovable
 {
     public string Name { get; init; }
     public string From { get; init; }
-    public IRun[] Commands { get; init; }
+    private IRun[] _commands = [];
+    public IRun[] Commands
+    {
+        get { return _commands; }
+        init { _commands = value; }
+    }
+
+    private (Type, int)[] CommandPriority = [(typeof(Copy), 1), (typeof(Run), 2)];
 
     public Layer(string name, string? from = null, IRun[]? commands = null)
     {
@@ -22,120 +29,43 @@ public class Layer : Iresovable
         Commands = [];
     }
 
+    public void Sort()
+    {
+        var cmds = Commands.ToList();
+
+        cmds.Sort(
+            (a, b) =>
+            {
+                Type typeA = a.GetType();
+                Type typeB = b.GetType();
+
+                (Type, int)? p1 = null;
+                (Type, int)? p2 = null;
+
+                for (int i = 0; i < CommandPriority.Length; i++)
+                {
+                    if (typeA == CommandPriority[i].Item1)
+                    {
+                        p1 = CommandPriority[i];
+                    }
+                    if (typeB == CommandPriority[i].Item1)
+                    {
+                        p2 = CommandPriority[i];
+                    }
+                }
+
+                int priorityA = p1?.Item2 ?? int.MaxValue;
+                int priorityB = p2?.Item2 ?? int.MaxValue;
+
+                return priorityA.CompareTo(priorityB);
+            }
+        );
+        _commands = cmds.ToArray();
+    }
+
     public override string ToString()
     {
         return ToString(0);
-    }
-
-    public static Layer Build(IToken token, string source)
-    {
-        if (token is not SpinnerToken tk || tk.Name != "Layer")
-        {
-            throw new Exception("THis is not a valid Layer token");
-        }
-
-        var name = tk
-            .Attributes.FirstOrDefault(v => v.Name.ToString(source) == "name")
-            ?.Value.ToString(source);
-        var from = tk
-            .Attributes.FirstOrDefault(v => v.Name.ToString(source) == "from")
-            ?.Value.ToString(source);
-
-        if (string.IsNullOrEmpty(name))
-        {
-            throw new Exception("Empty layer name");
-        }
-
-        List<IRun> commands = [];
-
-        for (int i = 0; i < tk.Children.Length; i++)
-        {
-            var el = tk.Children[i];
-            if (el is not SpinnerToken eltk)
-            {
-                continue;
-            }
-            var src = "";
-            var dest = "";
-            switch (eltk.Name)
-            {
-                case "Copy":
-                    src = eltk
-                        .Attributes.FirstOrDefault(v => v.Name.ToString(source) == "source")
-                        ?.Value.ToString(source);
-
-                    dest = eltk
-                        .Attributes.FirstOrDefault(v => v.Name.ToString(source) == "source")
-                        ?.Value.ToString(source);
-
-                    if (string.IsNullOrEmpty(src))
-                    {
-                        throw new Exception("Empty Copy source");
-                    }
-
-                    if (string.IsNullOrEmpty(dest))
-                    {
-                        throw new Exception("Empty Copy destination");
-                    }
-
-                    commands.Add(new Copy(src, dest));
-                    break;
-
-                case "Run":
-                    var cmd = eltk
-                        .Attributes.FirstOrDefault(v => v.Name.ToString(source) == "command")
-                        ?.Value.ToString(source);
-
-                    if (!string.IsNullOrEmpty(cmd))
-                    {
-                        commands.Add(new Run(cmd));
-                        break;
-                    }
-
-                    if (eltk.Children.Length == 0)
-                    {
-                        break;
-                    }
-
-                    commands.Add(
-                        new Run(
-                            string.Join(
-                                "",
-                                eltk.Children.Select(v =>
-                                {
-                                    if (v is XMLTextToken tx)
-                                    {
-                                        return string.Join(
-                                            " ",
-                                            tx.Lines.Select(x => x.Body.ToString(source))
-                                        );
-                                    }
-                                    return "";
-                                })
-                            )
-                        )
-                    );
-                    break;
-                case "Sql":
-
-                    src = eltk
-                        .Attributes.FirstOrDefault(v => v.Name.ToString(source) == "source")
-                        ?.Value.ToString(source);
-
-                    if (string.IsNullOrEmpty(src))
-                    {
-                        throw new Exception("Empty Copy source");
-                    }
-
-                    commands.Add(new Copy(src, "/srcipts"));
-                    var filename = src.Split("/").Last().ToString();
-                    // TODO Support other sql dialect
-                    commands.Add(new Run("psql -U {{POSTGRES_USER}} " + $"-f /script/{filename}"));
-                    break;
-            }
-        }
-
-        return new Layer(name, from: from, commands: commands.ToArray());
     }
 
     public string ToString(int depth = 0)
@@ -158,6 +88,92 @@ public class Layer : Iresovable
         {
             Commands[i].Resolve(scope);
         }
+    }
+
+    public static Layer[] ResolveLayer(Layer[] layers)
+    {
+        Layer[] lys = new Layer[layers.Length];
+        List<int>[] adj = new List<int>[layers.Length];
+        List<(int, int)> dependencies = [];
+
+        for (int i = 0; i < adj.Length; i++)
+        {
+            adj[i] = [];
+        }
+
+        for (int i = 0; i < layers.Length; i++)
+        {
+            var el = layers[i];
+            var from = el.From.Split(",");
+
+            for (int j = 0; j < from.Length; j++)
+            {
+                if (string.IsNullOrEmpty(from[j]))
+                {
+                    continue;
+                }
+                int idx = -1;
+                for (int k = 0; k < layers.Length; k++)
+                {
+                    if (layers[k].Name != from[j])
+                    {
+                        continue;
+                    }
+                    idx = k;
+                }
+                if (idx < 0 || idx == i)
+                {
+                    continue;
+                }
+
+                dependencies.Add((i, idx));
+
+                adj[i].Add(idx);
+            }
+        }
+
+        int[] topo = Tools.TopoSort(dependencies.ToArray(), layers.Length);
+
+        for (int i = 0; i < topo.Length; i++)
+        {
+            int layerIdx = topo[i];
+            Layer template = layers[layerIdx];
+            List<IRun> runs = [];
+            bool[] included = new bool[layers.Length];
+
+            ResolveLayer(layerIdx, runs, included, layers, adj);
+
+            lys[layerIdx] = new Layer(template.Name, from: template.From, commands: runs.ToArray());
+            lys[layerIdx].Sort();
+        }
+
+        return lys.ToArray();
+    }
+
+    private static void ResolveLayer(
+        int idx,
+        List<IRun> runs,
+        bool[] included,
+        Layer[] layers,
+        List<int>[] adj
+    )
+    {
+        for (int i = 0; i < adj[idx].Count; i++)
+        {
+            int j = adj[idx][i];
+            if (included[j] || idx == j)
+            {
+                continue;
+            }
+            ResolveLayer(j, runs, included, layers, adj);
+        }
+
+        for (int i = 0; i < layers[idx].Commands.Length; i++)
+        {
+            runs.Add(layers[idx].Commands[i].Copy());
+        }
+
+        included[idx] = true;
     }
 }
 

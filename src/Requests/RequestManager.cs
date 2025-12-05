@@ -4,7 +4,7 @@ namespace spinner;
 
 public class RequestManager
 {
-    private List<RequestTemplate> Templates = [];
+    public List<RequestTemplate> Templates { get; set; } = [];
 
     public void SetTemplates(List<RequestTemplate>? templates)
     {
