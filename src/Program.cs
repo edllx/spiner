@@ -2,8 +2,6 @@
 
 using spinner;
 
-SpinnerParser parser = new();
-
 App app = new(string.Join(" ", args));
 
 try

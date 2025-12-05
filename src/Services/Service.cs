@@ -1,27 +1,6 @@
+using System.Text;
+
 namespace spinner;
-
-public interface IInitializable
-{
-    Task Initialize(Service service);
-}
-
-public class ServiceImage : IInitializable
-{
-    public async Task Initialize(Service service)
-    {
-        await Task.Delay(4000);
-        Console.WriteLine($"Service: {service.Name} Initialized");
-    }
-}
-
-public class ServiceBuilder : IInitializable
-{
-    public async Task Initialize(Service service)
-    {
-        await Task.Delay(4000);
-        Console.WriteLine($"Service: {service.Name} Initialized");
-    }
-}
 
 public enum ServiceState
 {
@@ -31,96 +10,58 @@ public enum ServiceState
     Disposed,
 }
 
-public class Service : IDisposable
+public class Service
 {
-    public required string Name { get; init; }
-    public required string Image { get; init; }
+    public string Name { get; init; }
+    public string Id { get; init; }
+    public string Image { get; init; }
+    public string BuildPath { get; init; }
     public Scope Scope { get; init; }
-    private bool IsLayerApplyed = false;
-    private ServiceState State = ServiceState.Uninitialized;
+    public IRun[] Command { get; init; }
 
-    public Service(Scope parentScope)
+    public Service(
+        string name,
+        string id,
+        string? image = null,
+        string? buildPath = null,
+        Scope? scope = null,
+        IRun[]? commands = null
+    )
     {
-        Scope = new() { Parent = parentScope };
+        Name = name;
+        Id = id;
+        Image = image ?? "";
+        BuildPath = buildPath ?? "";
+        Scope = scope ?? new();
+        Command = commands ?? [];
     }
 
     public Service()
     {
+        Name = "";
+        Id = "";
+        Image = "";
+        BuildPath = "";
         Scope = new();
+        Command = [];
     }
 
-    private async Task Init()
+    public string ToString(int depth = 0)
     {
-        if (State != ServiceState.Uninitialized)
+        StringBuilder builder = new();
+        var image = string.IsNullOrEmpty(Image) ? "" : $" image=\"{Image}\"";
+        var build = string.IsNullOrEmpty(BuildPath) ? "" : $" build=\"{BuildPath}\"";
+
+        builder.Append($"{"".PadRight(4 * depth)}<Service name=\"{Name}\"{image}{build}>\n");
+        builder.Append($"{Scope.ToString(depth + 1)}");
+        if (Command.Length > 0)
         {
-            return;
+            builder.Append($"\n{"".PadRight(4 * (depth + 1))}<Layer>");
+            builder.Append($"\n{string.Join("\n", Command.Select(v => v.ToString(depth + 2)))}");
+            builder.Append($"\n{"".PadRight(4 * (depth + 1))}</Layer>");
         }
+        builder.Append($"\n{"".PadRight(4 * depth)}</Service>");
 
-        // build container
-        Console.WriteLine("Building Container");
-
-        State = ServiceState.Stoped;
-        await Task.CompletedTask;
-    }
-
-    public async Task ApplyLayer(Layer layer)
-    {
-        if (IsLayerApplyed)
-        {
-            return;
-        }
-
-        Console.WriteLine("Appling layer");
-
-        await Task.CompletedTask;
-        // execute setup scripts
-    }
-
-    public async Task Lauch()
-    {
-        if (State == ServiceState.Running)
-        {
-            return;
-        }
-
-        Console.WriteLine("Launching container");
-
-        // start container
-
-        State = ServiceState.Running;
-        await Task.CompletedTask;
-    }
-
-    public async Task Stop()
-    {
-        if (State == ServiceState.Stoped)
-        {
-            return;
-        }
-
-        // stop container
-
-        State = ServiceState.Stoped;
-        await Task.CompletedTask;
-    }
-
-    public async Task Clean()
-    {
-        if (State == ServiceState.Disposed)
-        {
-            return;
-        }
-
-        await Stop();
-
-        // delete container
-
-        State = ServiceState.Disposed;
-        await Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        _ = Clean();
+        return builder.ToString();
     }
 }

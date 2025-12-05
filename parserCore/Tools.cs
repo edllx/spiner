@@ -1,4 +1,5 @@
 using System.Runtime.Serialization;
+using System.Text;
 using System.Timers;
 
 namespace spinner;
@@ -75,5 +76,24 @@ public class Tools
         idx--;
         //backtrack marked node
         marked[node] = false;
+    }
+
+    public static string GenerateRandomString(int len, string prefix = "")
+    {
+        StringBuilder builder = new();
+        string alphaNum = "abcdefghijklmnopkrstuvwxyz0123456789";
+        int i = 0;
+        for (; i < prefix.Length && i < len; i++)
+        {
+            builder.Append(prefix[i]);
+        }
+
+        for (; i < len; i++)
+        {
+            var pick = Random.Shared.Next(alphaNum.Length);
+            builder.Append(alphaNum[pick]);
+        }
+
+        return builder.ToString();
     }
 }

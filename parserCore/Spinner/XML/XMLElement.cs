@@ -55,7 +55,7 @@ public class XMLText : IParser
 
         var lines = TextToken.Normalize(text.Body.ToString(context.Input), text.Body.Start);
 
-        return ParseResult.SuccessAt(new XMLTextToken() { Lines = lines });
+        return ParseResult.SuccessAt(new XMLTextToken() { Body = text.Body, Lines = lines });
     }
 }
 
@@ -184,6 +184,9 @@ internal class XMLElemenParser : IParser
                 {
                     Unroll(t, children, attributes, comments, texts);
                 }
+                break;
+            case ChoiceToken choice:
+                Unroll(choice.Token, children, attributes, comments, texts);
                 break;
 
             case LineBreakToken:

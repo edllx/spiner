@@ -148,7 +148,7 @@ public class SpinnerParser
     {
         Mode = ElementMode.MultiLine,
         IsAttributeAllowed = true,
-        AllowedChildElements = [Test],
+        AllowedChildElements = [Test, SpinnerKey],
     };
 
     public static SpinnerElement TestSuite = new("TestSuite")
@@ -170,6 +170,7 @@ public class SpinnerParser
         try
         {
             var context = new ParseContext(source);
+
             var res = Spinner.Parse(context);
             if (!res.Success)
             {
@@ -267,16 +268,45 @@ public class SpinnerElement : IParser
         }
 
         SequenceToken seq = (SequenceToken)res.Token;
-        XMLElementToken xmlElement = (XMLElementToken)seq.Children[1];
+        IToken[] children = [];
+        XMLAttributeToken[] attribues = [];
+        XMLCommentToken[] comments = [];
+
+        switch (Mode)
+        {
+            case ElementMode.SingleLine:
+                XMLElementToken xmlElementS = (XMLElementToken)seq.Children[1];
+                children = xmlElementS.Children;
+                attribues = xmlElementS.Attributes;
+                comments = xmlElementS.Comments;
+                break;
+
+            case ElementMode.MultiLine:
+                XMLElementToken xmlElementM = (XMLElementToken)seq.Children[1];
+                children = xmlElementM.Children;
+                attribues = xmlElementM.Attributes;
+                comments = xmlElementM.Comments;
+                break;
+
+            case ElementMode.Both:
+                var ch = (ChoiceToken)seq.Children[1];
+                XMLElementToken xmlElementB = (XMLElementToken)ch.Token;
+                children = xmlElementB.Children;
+                attribues = xmlElementB.Attributes;
+                comments = xmlElementB.Comments;
+                break;
+            default:
+                break;
+        }
 
         return ParseResult.SuccessAt(
             new SpinnerToken()
             {
                 Name = Name,
-                Body = xmlElement.Body,
-                Children = xmlElement.Children,
-                Attributes = IsAttributeAllowed ? xmlElement.Attributes : [],
-                Comments = xmlElement.Comments,
+                Body = seq.Body,
+                Children = children,
+                Attributes = IsAttributeAllowed ? attribues : [],
+                Comments = comments,
                 Mode = Mode,
             }
         );
@@ -312,6 +342,23 @@ public class SpinnerToken : IToken
         }
 
         return ToStringMultiLine(source, depth);
+    }
+
+    public string? GetAttribute(string name, string source)
+    {
+        var attribute = Attributes
+            .FirstOrDefault(v => v.Name.ToString(source) == name)
+            ?.Value.ToString(source);
+
+        return attribute;
+    }
+
+    public void ValidateName(string name)
+    {
+        if (name != Name)
+        {
+            throw new Exception("Invalid token type");
+        }
     }
 
     private string ToStringSindleLine(string source, int depth = 0)

@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace spinner;
 
 /* A Scope shoul provide utilities to
@@ -5,16 +7,61 @@ namespace spinner;
  * - Get/Set keys value (bubbling up to parent scope
  *   if necessary)
  * */
-public class Scope
+public class Scope : Iresovable
 {
-    public Scope? Parent { private get; init; }
-    private List<Key> Keys = [];
+    public Scope? Parent { get; set; }
+    public List<Key> Keys { get; private set; } = [];
+
+    public Scope() { }
+
+    public Scope(Scope s)
+    {
+        if (s.Parent is not null)
+        {
+            Parent = new(s.Parent);
+        }
+
+        for (int i = 0; i < s.Keys.Count; i++)
+        {
+            Keys.Add(new(s.Keys[i].Name, s.Keys[i].Value));
+        }
+    }
+
+    public Scope Copy()
+    {
+        return new(this);
+    }
+
+    public Scope(IEnumerable<Key> keys, Scope? parent = null)
+    {
+        Parent = parent;
+        foreach (Key item in keys)
+        {
+            Keys.Add(new(item.Name, item.Value));
+        }
+    }
+
+    public void Fill(SpinnerToken token, string source)
+    {
+        Keys.Clear();
+        for (int i = 0; i < token.Children.Length; i++)
+        {
+            var child = token.Children[i];
+
+            try
+            {
+                var key = Key.Build(child, source);
+                Set((key.Name, key.Value));
+            }
+            catch (Exception) { }
+        }
+    }
 
     public void Set(params (string, string)[] keys)
     {
         for (int i = 0; i < keys.Length; i++)
         {
-            Set(keys[i].Item1, keys[i].Item1, bubble: false, create: true);
+            Set(keys[i].Item1, keys[i].Item2, bubble: false, create: true);
         }
     }
 
@@ -61,5 +108,29 @@ public class Scope
         }
 
         Parent.Set(keyname, value);
+    }
+
+    public string ToString(int depth = 0)
+    {
+        StringBuilder builder = new();
+        builder.Append($"{"".PadRight(4 * depth)}<Keys>\n");
+        builder.Append(
+            string.Join(
+                "\n",
+                Keys.Select(v =>
+                {
+                    return $"{"".PadRight(4 * (depth + 1))}{v.Name}: \"{v.Value}\"";
+                })
+            )
+        );
+
+        builder.Append($"\n{"".PadRight(4 * depth)}</Keys>");
+
+        return builder.ToString();
+    }
+
+    public void Resolve(Scope? scope)
+    {
+        KeyManager.Resolve(Keys.ToArray());
     }
 }

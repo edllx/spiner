@@ -50,6 +50,49 @@ public class KeyManager
         return;
     }
 
+    public static string Resolve(string value, Key[] context)
+    {
+        KeyParser parser = new();
+
+        var res = parser.Parse(value);
+        var token = res.Token as KeyToken;
+        if (token is null)
+        {
+            throw new Exception("Faile to parse value");
+        }
+
+        string resovedValue = string.Join(
+            "",
+            token.Tokens.Select(val =>
+            {
+                var buffer = new StringBuilder();
+                switch (val)
+                {
+                    case TextToken text:
+                        buffer.Append(value.AsSpan().Slice(text.Body.Start, text.Body.Length));
+                        break;
+
+                    case KeyRefToken t:
+
+                        var name = value.AsSpan().Slice(t.Name.Start, t.Name.Length).ToString();
+
+                        var y =
+                            context.FirstOrDefault(v => v.Name == t.Name.ToString(value))?.Value
+                            ?? "";
+
+                        buffer.Append(y);
+                        break;
+
+                    default:
+                        break;
+                }
+                return buffer.ToString();
+            })
+        );
+
+        return "";
+    }
+
     private static void Resolve(
         Dictionary<string, (int, KeyToken)> dictionary,
         Key[] keys,
@@ -63,6 +106,12 @@ public class KeyManager
             if (!dictionary.TryGetValue(k.Name, out var l))
             {
                 throw new MissingKeyException(k.Name);
+            }
+
+            if (k.Generated)
+            {
+                k.Resolve(Tools.GenerateRandomString(k.GenInfo.Len));
+                return;
             }
 
             string resovedValue = string.Join(
