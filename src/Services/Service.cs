@@ -10,6 +10,12 @@ public enum ServiceState
     Disposed,
 }
 
+public interface IService
+{
+    Task<IService> Init();
+    Task<Service> Build();
+}
+
 public class Service
 {
     public string Name { get; init; }
@@ -17,7 +23,9 @@ public class Service
     public string Image { get; init; }
     public string BuildPath { get; init; }
     public Scope Scope { get; init; }
-    public IRun[] Command { get; init; }
+    public IRun[] Commands { get; private init; }
+
+    public Arg[] Args { get; init; }
 
     public Service(
         string name,
@@ -25,7 +33,8 @@ public class Service
         string? image = null,
         string? buildPath = null,
         Scope? scope = null,
-        IRun[]? commands = null
+        IRun[]? commands = null,
+        Arg[]? args = null
     )
     {
         Name = name;
@@ -33,7 +42,8 @@ public class Service
         Image = image ?? "";
         BuildPath = buildPath ?? "";
         Scope = scope ?? new();
-        Command = commands ?? [];
+        Commands = commands ?? [];
+        Args = args ?? [];
     }
 
     public Service()
@@ -43,7 +53,47 @@ public class Service
         Image = "";
         BuildPath = "";
         Scope = new();
-        Command = [];
+        Commands = [];
+        Args = [];
+    }
+
+    public void ApplyArgs(Stack? stack = null)
+    {
+        for (int i = 0; i < Args.Length; i++)
+        {
+            var arg = Args[i];
+            string value = arg.Value;
+            if (stack is not null && !string.IsNullOrEmpty(arg.FROM))
+            {
+                var v = stack.GetKey(arg.FROM, arg.Key);
+                value = v is not null ? v : value;
+            }
+
+            Scope.Set(arg.Key, value, bubble: false, create: false);
+        }
+    }
+
+    public void ResolveLayer()
+    {
+        for (int i = 0; i < Commands.Length; i++)
+        {
+            try
+            {
+                switch (Commands[i])
+                {
+                    case Copy cp:
+                        cp.Source = KeyManager.Resolve(cp.Source, Scope.Keys);
+                        cp.Destination = KeyManager.Resolve(cp.Destination, Scope.Keys);
+                        break;
+
+                    case Run r:
+
+                        r.Text = KeyManager.Resolve(r.Text, Scope.Keys);
+                        break;
+                }
+            }
+            catch (Exception) { }
+        }
     }
 
     public string ToString(int depth = 0)
@@ -54,10 +104,10 @@ public class Service
 
         builder.Append($"{"".PadRight(4 * depth)}<Service name=\"{Name}\"{image}{build}>\n");
         builder.Append($"{Scope.ToString(depth + 1)}");
-        if (Command.Length > 0)
+        if (Commands.Length > 0)
         {
             builder.Append($"\n{"".PadRight(4 * (depth + 1))}<Layer>");
-            builder.Append($"\n{string.Join("\n", Command.Select(v => v.ToString(depth + 2)))}");
+            builder.Append($"\n{string.Join("\n", Commands.Select(v => v.ToString(depth + 2)))}");
             builder.Append($"\n{"".PadRight(4 * (depth + 1))}</Layer>");
         }
         builder.Append($"\n{"".PadRight(4 * depth)}</Service>");

@@ -40,6 +40,7 @@ public class KeyManager
         try
         {
             var order = Tools.TopoSort(nb.ToArray(), dictionary.Count);
+
             Resolve(dictionary, keys, order);
         }
         catch (CircularReferenceException<int> ex)
@@ -50,7 +51,7 @@ public class KeyManager
         return;
     }
 
-    public static string Resolve(string value, Key[] context)
+    public static string Resolve(string value, IEnumerable<Key> context)
     {
         KeyParser parser = new();
 
@@ -90,7 +91,7 @@ public class KeyManager
             })
         );
 
-        return "";
+        return resovedValue;
     }
 
     private static void Resolve(
@@ -103,15 +104,21 @@ public class KeyManager
         {
             Key k = keys[i];
 
+            if (k.Generated)
+            {
+                var v = Tools.GenerateRandomString(
+                    k.GenInfo.Len,
+                    prefix: k.GenInfo.Prefix,
+                    seed: k.GenInfo.Seed
+                );
+
+                k.Resolve(v);
+                continue;
+            }
+
             if (!dictionary.TryGetValue(k.Name, out var l))
             {
                 throw new MissingKeyException(k.Name);
-            }
-
-            if (k.Generated)
-            {
-                k.Resolve(Tools.GenerateRandomString(k.GenInfo.Len));
-                return;
             }
 
             string resovedValue = string.Join(

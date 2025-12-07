@@ -34,7 +34,12 @@ public class TestRequest
     {
         StringBuilder builder = new();
 
-        builder.Append($"{"".PadRight(4 * depth)}<Request path=\"{Path}\" >");
+        if (Body is null && Scope.Keys.Count == 0)
+        {
+            return $"{"".PadRight(4 * depth)}<Request method=\"{Method}\" path=\"{Path}\" />";
+        }
+
+        builder.Append($"{"".PadRight(4 * depth)}<Request method=\"{Method}\" path=\"{Path}\" >");
 
         if (Scope.Keys.Count > 0)
         {

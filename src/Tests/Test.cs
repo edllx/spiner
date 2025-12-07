@@ -19,8 +19,8 @@ public class Test
     }
 
     public Test(
-        TestRequest? request,
-        TestResponse? response,
+        TestRequest? request = null,
+        TestResponse? response = null,
         Scope? scope = null,
         TestAssert? asserts = null
     )

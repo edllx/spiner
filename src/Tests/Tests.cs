@@ -23,26 +23,6 @@ public class Tests
         Scope = new();
     }
 
-    private static void GetKeys(SpinnerToken token, string source, Scope scope)
-    {
-        if (token.Name != "Tests")
-        {
-            return;
-        }
-
-        for (int i = 0; i < token.Children.Length; i++)
-        {
-            var child = token.Children[i];
-
-            try
-            {
-                var key = Key.Build(child, source);
-                scope.Set((key.Name, key.Value));
-            }
-            catch (Exception) { }
-        }
-    }
-
     public string ToString(int depth = 0)
     {
         StringBuilder builder = new();

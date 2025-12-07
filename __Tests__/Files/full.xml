@@ -1,10 +1,10 @@
 <Spinner>
   <!--Define the structure of each services-->
   <Services>
-    <Service name="db" image="potgress:17">
+    <Service name="db" image="postgress:17">
       <Key name="POSTGRES_USER" value="spiner" />
-      <GeneratedKey name="POSTGRES_PASSWORD" len="32" />
-      <GeneratedKey name="POSTGRES_DB" len="10" />
+      <GeneratedKey name="POSTGRES_PASSWORD" len="32" seed="10" />
+      <GeneratedKey name="POSTGRES_DB" len="10" seed="20" prefix="DB_" />
       <Key name="DB_CONNECTION_STRING" value="Server={{CONTAINER_NAME}};Port=5432;Database={{POSTGRES_DB}};User ID={{POSTGRES_USER}};Password={{POSTGRES_PASSWORD}};"/>
 
       <Layer name="base-schema" >
@@ -17,7 +17,7 @@
 
       <Layer name="celsius10" from="base-schema">
         <Copy source="./database/Config/celsius10.sql" dest="/scripts"/>
-        <Run command="psql -U {{POSTGRES_USER}} -f /script/celsius10.sql" />
+        <Run command="psql -U {{POSTGRES_USER}} -f /scripts/celsius10.sql" />
       </Layer>
 
       <Layer name="bothfandc" from="fahrenheit10,celsius10" >
@@ -51,13 +51,13 @@
       </Body>
     </Request>
 
-    <Request name="patch" method="PATCH" path="weather/{{id}}">
+    <Request name="patch" method="PATCH" path="weather">
       <Key name="id"/>
       <Key name="temperature"/>
       <Key name="type"/>
 
       <Body type="json">
-        <Key name="id" value="{{temperature}}"/>
+        <Key name="id" value="{{id}}"/>
         <Key name="temperature" value="{{temperature}}"/>
         <Key name="type" value="{{type}}"/>
       </Body>
@@ -67,20 +67,20 @@
   <TestSuite>
     <Stack>
       <Service name="db" layer="fahrenheit10"/>
+
       <Service name="api">
-        <Arg name="DB_CONNECTION_STRING" from="db" key="DB_CONNECTION_STRING"/>
+        <Arg from="db" key="DB_CONNECTION_STRING"/>
       </Service>
     </Stack>
 
     <Tests mode="sync">
-      <Key name="id" />
+      <Key name="id"/>
       <Key name="temperature" value="105"/>
       <Key name="type" value="Celsius"/>
 
       <Test>
         <Request name="getall"/>
         <Asserts>
-          <!-- Response is a contextual variable to each test-->
           <Equals actual="{{response['json']#type}}" expected="array"/>
           <Equals actual="{{response['json']#length}}" expected="3"/>
         </Asserts>
@@ -93,7 +93,7 @@
         </Request>
 
         <Response>
-          <Set key="id" value="{{response['json']['id']}"/>
+          <Set key="id" value="{{response['json']['id']}}"/>
         </Response>
 
         <Asserts>

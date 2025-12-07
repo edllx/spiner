@@ -2,14 +2,7 @@ using System.Text;
 
 namespace spinner;
 
-public interface IServiceTemplate
-{
-    Task<IServiceTemplate> Init();
-    Task<IServiceTemplate> ApplyLayer(Layer l);
-    Task<Service> Build();
-}
-
-public partial class ServiceTemplate : IServiceTemplate, IDisposable
+public partial class ServiceTemplate
 {
     public string Name { get; init; }
     public string? Image { get; init; }
@@ -41,83 +34,6 @@ public partial class ServiceTemplate : IServiceTemplate, IDisposable
         BuildPath = "";
         Scope = new();
         Layers = [];
-    }
-
-    public async Task<IServiceTemplate> Init()
-    {
-        if (State != ServiceState.Uninitialized)
-        {
-            return this;
-        }
-
-        // build container
-        Console.WriteLine("Building Container");
-
-        State = ServiceState.Stoped;
-        await Task.CompletedTask;
-        return this;
-    }
-
-    public async Task<IServiceTemplate> ApplyLayer(Layer layer)
-    {
-        if (IsLayerApplyed)
-        {
-            return this;
-        }
-
-        Console.WriteLine("Appling layer");
-
-        await Task.CompletedTask;
-        // execute setup scripts
-        return this;
-    }
-
-    public async Task Lauch()
-    {
-        if (State == ServiceState.Running)
-        {
-            return;
-        }
-
-        Console.WriteLine("Launching container");
-
-        // start container
-
-        State = ServiceState.Running;
-        await Task.CompletedTask;
-    }
-
-    public async Task Stop()
-    {
-        if (State == ServiceState.Stoped)
-        {
-            return;
-        }
-
-        // stop container
-
-        State = ServiceState.Stoped;
-        await Task.CompletedTask;
-    }
-
-    public async Task Clean()
-    {
-        if (State == ServiceState.Disposed)
-        {
-            return;
-        }
-
-        await Stop();
-
-        // delete container
-
-        State = ServiceState.Disposed;
-        await Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        _ = Clean();
     }
 
     public string ToString(int depth = 0)

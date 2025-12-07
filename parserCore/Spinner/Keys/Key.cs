@@ -1,17 +1,28 @@
 namespace spinner;
 
-public struct GenerationInfo
+public class GenerationInfo
 {
-    public int Len { get; init; }
+    public int Len { get; init; } = 20;
+    public int Seed { get; init; } = -1;
+    public string Prefix { get; init; } = "";
+
+    public GenerationInfo Copy()
+    {
+        return new()
+        {
+            Len = Len,
+            Seed = Seed,
+            Prefix = Prefix,
+        };
+    }
 }
 
 public class Key
 {
     public string Name { get; init; }
     public string Value { get; set; }
-    public bool Resolved { get; private set; }
     public bool Generated { get; init; }
-    public GenerationInfo GenInfo { get; init; }
+    public GenerationInfo GenInfo { get; init; } = new();
 
     public Key()
     {
@@ -30,16 +41,53 @@ public class Key
         Value = value;
     }
 
-    public void Resolve(string value)
+    public bool Resolve()
     {
-        if (Resolved)
+        if (Generated)
         {
-            return;
+            Value = Tools.GenerateRandomString(GenInfo);
+            return true;
+        }
+        return false;
+    }
+
+    public bool Resolve(string value)
+    {
+        if (Resolve())
+        {
+            return true;
         }
 
         Value = value;
+        return false;
+    }
 
-        Resolved = true;
+    public bool Resolve(IEnumerable<Key> keys)
+    {
+        if (Resolve())
+        {
+            return true;
+        }
+
+        try
+        {
+            var value = KeyManager.Resolve(Name, keys);
+            return Resolve(value);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    public bool Resolve(Scope scope)
+    {
+        if (Resolve())
+        {
+            return true;
+        }
+
+        return Resolve(scope.Keys);
     }
 
     public override string ToString()
@@ -47,56 +95,9 @@ public class Key
         return $"{Name} : {Value}";
     }
 
-    public static Key Build(IToken token, string source)
+    public Key Copy()
     {
-        if (token is not SpinnerToken tk)
-        {
-            throw new Exception("THis is not a valid Layer token");
-        }
-
-        var name = "";
-        var value = "";
-        var len = "";
-
-        name =
-            tk.Attributes.FirstOrDefault(v => v.Name.ToString(source) == "name")
-                ?.Value.ToString(source)
-            ?? "";
-
-        value =
-            tk.Attributes.FirstOrDefault(v => v.Name.ToString(source) == "value")
-                ?.Value.ToString(source)
-            ?? "";
-
-        len =
-            tk.Attributes.FirstOrDefault(v => v.Name.ToString(source) == "len")
-                ?.Value.ToString(source)
-            ?? "";
-
-        if (string.IsNullOrEmpty(name))
-        {
-            throw new Exception("Emty Key name");
-        }
-
-        switch (tk.Name)
-        {
-            case "Key":
-                return new(name, value);
-
-            case "GeneratedKey":
-                if (!int.TryParse(len, out int ln))
-                {
-                    throw new Exception("Invalid generated key len");
-                }
-                value = Tools.GenerateRandomString(ln);
-                return new(name, "{{Generated}}")
-                {
-                    Generated = true,
-                    GenInfo = new() { Len = ln },
-                };
-        }
-
-        throw new Exception("Invalid key");
+        return new(Name, Value) { Generated = Generated, GenInfo = GenInfo.Copy() };
     }
 }
 

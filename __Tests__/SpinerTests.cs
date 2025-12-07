@@ -14,10 +14,10 @@ public class SpinnerParserTest
         var expected = expectedApp.ToString();
         var actual = actualApp.ToString();
 
-        Assert.Equal(expected, actual);
+        //Assert.Equal(expected, actual);
         Assert.True(
             expected == actual,
-            $"{expectedApp.Args}\n\nExpected:\n{expected}\n\nActual:\n{actual}\n"
+            $"{expectedApp.Args}\n\nExpected:\n{expectedApp.TestManager.ToString(0)}\n\nActual:\n{actualApp.TestManager.ToString(0)}\n"
         );
     }
 }

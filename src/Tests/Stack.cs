@@ -16,6 +16,31 @@ public partial class Stack
         Services = [];
     }
 
+    public string? GetKey(string serviceName, string keyName)
+    {
+        if (string.IsNullOrEmpty(serviceName) || string.IsNullOrEmpty(keyName))
+        {
+            return null;
+        }
+
+        Service? s = null;
+
+        for (int i = 0; i < Services.Length; i++)
+        {
+            if (Services[i].Name == serviceName)
+            {
+                s = Services[i];
+                break;
+            }
+        }
+        if (s is null)
+        {
+            return null;
+        }
+
+        return s.Scope.Get(keyName);
+    }
+
     public string ToString(int depth = 0)
     {
         StringBuilder builder = new();

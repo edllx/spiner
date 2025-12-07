@@ -4,7 +4,7 @@ namespace spinner;
 
 public partial class TestsManager
 {
-    private List<TestSuite> Tests = [];
+    public List<TestSuite> Tests { get; set; } = [];
 
     public TestsManager() { }
 

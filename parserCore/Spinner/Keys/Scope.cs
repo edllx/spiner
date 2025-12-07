@@ -2,6 +2,11 @@ using System.Text;
 
 namespace spinner;
 
+public interface Iresovable
+{
+    void Resolve(Scope? scope = null);
+}
+
 /* A Scope shoul provide utilities to
  * - Resolve Keys in the scope
  * - Get/Set keys value (bubbling up to parent scope
@@ -23,7 +28,13 @@ public class Scope : Iresovable
 
         for (int i = 0; i < s.Keys.Count; i++)
         {
-            Keys.Add(new(s.Keys[i].Name, s.Keys[i].Value));
+            Keys.Add(
+                new(s.Keys[i].Name, s.Keys[i].Value)
+                {
+                    Generated = s.Keys[i].Generated,
+                    GenInfo = s.Keys[i].GenInfo.Copy(),
+                }
+            );
         }
     }
 
@@ -37,23 +48,7 @@ public class Scope : Iresovable
         Parent = parent;
         foreach (Key item in keys)
         {
-            Keys.Add(new(item.Name, item.Value));
-        }
-    }
-
-    public void Fill(SpinnerToken token, string source)
-    {
-        Keys.Clear();
-        for (int i = 0; i < token.Children.Length; i++)
-        {
-            var child = token.Children[i];
-
-            try
-            {
-                var key = Key.Build(child, source);
-                Set((key.Name, key.Value));
-            }
-            catch (Exception) { }
+            Keys.Add(item.Copy());
         }
     }
 
@@ -65,7 +60,7 @@ public class Scope : Iresovable
         }
     }
 
-    public string Get(string keyname)
+    public string? Get(string keyname)
     {
         for (int i = 0; i < Keys.Count; i++)
         {
@@ -74,22 +69,23 @@ public class Scope : Iresovable
                 return Keys[i].Value;
             }
         }
+
         if (Parent is null)
         {
-            throw new MissingKeyException(keyname);
+            return null;
         }
 
         return Parent.Get(keyname);
     }
 
-    public void Set(string keyname, string value, bool bubble = true, bool create = false)
+    public bool Set(string keyname, string value, bool bubble = true, bool create = false)
     {
         for (int i = 0; i < Keys.Count; i++)
         {
             if (Keys[i].Name == keyname)
             {
                 Keys[i].Set(value);
-                return;
+                return true;
             }
         }
 
@@ -98,16 +94,16 @@ public class Scope : Iresovable
             if (create)
             {
                 Keys.Add(new(keyname, value));
+                return true;
             }
-            return;
         }
 
         if (Parent is null)
         {
-            throw new MissingKeyException(keyname);
+            return false;
         }
 
-        Parent.Set(keyname, value);
+        return Parent.Set(keyname, value);
     }
 
     public string ToString(int depth = 0)
@@ -129,8 +125,15 @@ public class Scope : Iresovable
         return builder.ToString();
     }
 
-    public void Resolve(Scope? scope)
+    public void Resolve(Scope? scope = null)
     {
-        KeyManager.Resolve(Keys.ToArray());
+        try
+        {
+            KeyManager.Resolve(Keys.ToArray());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
     }
 }

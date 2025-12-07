@@ -4,6 +4,8 @@ namespace spinner;
 
 public class Tools
 {
+    private static string _alphaNum = "abcdefghijklmnopkrstuvwxyz0123456789";
+
     /// <summary>
     /// Takes an array of dependencies and return an array node sorted topologically
     /// </summary>
@@ -72,14 +74,24 @@ public class Tools
 
         order[idx] = node;
         idx--;
-        //backtrack marked node
+
         marked[node] = false;
     }
 
-    public static string GenerateRandomString(int len, string prefix = "")
+    public static string GenerateRandomString(int len, string prefix = "", int? seed = null)
     {
         StringBuilder builder = new();
-        string alphaNum = "abcdefghijklmnopkrstuvwxyz0123456789";
+        Random r = new Random();
+
+        if (seed is not null && seed.Value >= 0 && seed.Value <= int.MaxValue)
+        {
+            r = new(seed.Value);
+        }
+        else
+        {
+            r = Random.Shared;
+        }
+
         int i = 0;
         for (; i < prefix.Length && i < len; i++)
         {
@@ -88,8 +100,37 @@ public class Tools
 
         for (; i < len; i++)
         {
-            var pick = Random.Shared.Next(alphaNum.Length);
-            builder.Append(alphaNum[pick]);
+            var pick = r.Next(_alphaNum.Length);
+            builder.Append(_alphaNum[pick]);
+        }
+
+        return builder.ToString();
+    }
+
+    public static string GenerateRandomString(GenerationInfo info)
+    {
+        StringBuilder builder = new();
+        Random r = new Random();
+
+        if (info.Seed >= 0 && info.Seed <= int.MaxValue)
+        {
+            r = new(info.Seed);
+        }
+        else
+        {
+            r = Random.Shared;
+        }
+
+        int i = 0;
+        for (; i < info.Prefix.Length && i < info.Len; i++)
+        {
+            builder.Append(info.Prefix[i]);
+        }
+
+        for (; i < info.Len; i++)
+        {
+            var pick = r.Next(_alphaNum.Length);
+            builder.Append(_alphaNum[pick]);
         }
 
         return builder.ToString();
