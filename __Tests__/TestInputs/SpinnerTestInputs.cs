@@ -11,8 +11,8 @@ public partial class TestInputs
             image: "postgress:17",
             scope: new([
                 new("POSTGRES_USER", "spiner"),
-                new("POSTGRES_PASSWORD", "{{Generated}}"),
-                new("POSTGRES_DB", "{{Generated}}"),
+                new("POSTGRES_PASSWORD", "Generated"),
+                new("POSTGRES_DB", "Generated"),
                 new(
                     "DB_CONNECTION_STRING",
                     "Server={{CONTAINER_NAME}};Port=5432;Database={{POSTGRES_DB}};User ID={{POSTGRES_USER}};Password={{POSTGRES_PASSWORD}};"

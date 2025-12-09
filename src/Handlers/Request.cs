@@ -96,7 +96,7 @@ public partial class App
     private T? HandleElement<T>(HandleRequestBody request)
         where T : RequestBody
     {
-        if (request.Token is not SpinnerToken token || token.Name != "Request")
+        if (request.Token is not SpinnerToken token || token.Name != "Body")
         {
             return default(T);
         }

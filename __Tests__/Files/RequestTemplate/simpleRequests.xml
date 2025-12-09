@@ -16,7 +16,7 @@
       </Body>
     </Request>
 
-    <Request name="patch" method="PATCH" path="weather/{{id}}">
+    <Request name="patch" method="PATCH" path="weather">
       <Key name="id"/>
       <Key name="temperature"/>
       <Key name="type"/>

@@ -1,7 +1,7 @@
 <Spinner>
   <!--Define the structure of each services-->
   <Services>
-    <Service name="db" image="potgress:17">
+    <Service name="db" image="postgress:17">
       <Layer name="base-schema" >
         <Sql source="./database/Config/schema.sql"/>
       </Layer>

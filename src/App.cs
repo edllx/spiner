@@ -148,7 +148,18 @@ public partial class App
                         HandleElement<List<RequestTemplate>>(new(tk, source))
                     );
                     break;
+            }
+        }
 
+        for (int i = 0; i < token.Children.Length; i++)
+        {
+            if (token.Children[i] is not SpinnerToken tk)
+            {
+                continue;
+            }
+
+            switch (tk.Name)
+            {
                 case "TestSuite":
 
                     var ts = HandleElement<TestSuite>(new(tk, source));
@@ -165,7 +176,7 @@ public partial class App
 
     public override string ToString()
     {
-        return ToString(0);
+        return "";
     }
 
     public string ToString(int depth)

@@ -9,8 +9,6 @@ public partial class ServiceTemplate
     public string? BuildPath { get; init; }
     public Layer[] Layers { get; init; } = [];
     public Scope Scope { get; init; }
-    private bool IsLayerApplyed = false;
-    private ServiceState State = ServiceState.Uninitialized;
 
     public ServiceTemplate(
         string name,

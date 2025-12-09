@@ -11,13 +11,9 @@ public class SpinnerParserTest
     public void KeyTest(App actualApp, App expectedApp)
     {
         actualApp.Init();
-        var expected = expectedApp.ToString();
-        var actual = actualApp.ToString();
+        var expected = expectedApp.ToString(0);
+        var actual = actualApp.ToString(0);
 
-        //Assert.Equal(expected, actual);
-        Assert.True(
-            expected == actual,
-            $"{expectedApp.Args}\n\nExpected:\n{expectedApp.TestManager.ToString(0)}\n\nActual:\n{actualApp.TestManager.ToString(0)}\n"
-        );
+        Assert.Equal(expected, actual);
     }
 }
