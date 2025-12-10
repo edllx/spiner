@@ -14,6 +14,6 @@ public class SpinnerParserTest
         var expected = expectedApp.ToString(0);
         var actual = actualApp.ToString(0);
 
-        Assert.Equal(expected, actual);
+        Assert.True(expected == actual, Diff.TextDiff(actual, expected).ToString());
     }
 }

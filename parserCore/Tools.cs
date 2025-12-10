@@ -201,6 +201,8 @@ public struct Diag2
     public int X1 { get; init; }
     public int Y1 { get; init; }
     public int Len { get; init; }
+    public Point TL => new(X1, Y1);
+    public Point BR => new(X1 + Len, Y1 + Len);
 
     public override string ToString()
     {
@@ -244,6 +246,15 @@ public struct Range2
     public static Range2[] ComputeRanges(Diag2 diag)
     {
         return [new(diag.X1, diag.X1 + diag.Len), new(diag.Y1, diag.Y1 + diag.Len)];
+    }
+
+    public static Range2[] ComputeRanges(Point p1, Point p2)
+    {
+        return
+        [
+            new(Math.Min(p1.X, p2.X), Math.Max(p1.X, p2.X)),
+            new(Math.Min(p1.Y, p2.Y), Math.Max(p1.Y, p2.Y)),
+        ];
     }
 }
 
@@ -296,6 +307,8 @@ public class DiffResult
     public override string ToString()
     {
         StringBuilder builder = new();
+        int added = 0;
+        int removed = 0;
 
         for (int i = 0; i < Changes.Length; i++)
         {
@@ -314,10 +327,12 @@ public class DiffResult
             {
                 case DiffChangeType.Add:
                     builder.Append(AnsiColors.Colorize($"+ {line}", AnsiColors.Green));
+                    added++;
                     break;
 
                 case DiffChangeType.Remove:
                     builder.Append(AnsiColors.Colorize($"- {line}", AnsiColors.Red));
+                    removed++;
                     break;
 
                 case DiffChangeType.Keep:
@@ -325,6 +340,10 @@ public class DiffResult
                     break;
             }
         }
+
+        builder.Append(
+            $"\n\n{AnsiColors.Colorize($"+ {added}", AnsiColors.Green)}\n{AnsiColors.Colorize($"- {removed}", AnsiColors.Red)}"
+        );
 
         return builder.ToString();
     }
@@ -374,12 +393,10 @@ public static class Diff
 
         var actualHList = SplitTextToHash(actual, linesHashes);
         var expectedHList = SplitTextToHash(expected, linesHashes);
-
         var diags = GetDiags(expectedHList, actualHList);
-        var lds = FindLDS(diags);
-        var diff = BuildDiffPath(lds, expectedHList, actualHList);
 
-        //Console.WriteLine(string.Join("\n", diff));
+        var bds = FindBDS(diags.ToList(), expectedHList.Length, actualHList.Length);
+        var diff = BuildDiffPath(bds, expectedHList, actualHList);
 
         return new(linesHashes, diff);
     }
@@ -402,22 +419,13 @@ public static class Diff
         return res.ToArray();
     }
 
-    private static Diag2[] FindLDS(Diag2[] diags)
-    {
-        int bestLen = int.MinValue;
-        List<Diag2> result = [];
-        List<Diag2> path = [];
-        FindLDSRecursive(diags, 0, ref bestLen, 0, 0, 0, path, result);
-        return result.ToArray();
-    }
-
-    private static DiffChange[] BuildDiffPath(Diag2[] diags, int[] expected, int[] actual)
+    private static DiffChange[] BuildDiffPath(List<Diag2> diags, int[] expected, int[] actual)
     {
         List<DiffChange> changes = [];
         int x = 0;
         int y = 0;
 
-        for (int i = 0; i < diags.Length; i++)
+        for (int i = 0; i < diags.Count; i++)
         {
             for (; x < diags[i].X1; x++)
             {
@@ -447,6 +455,121 @@ public static class Diff
         return changes.ToArray();
     }
 
+    private static Diag2[] FindLDS(Diag2[] diags)
+    {
+        int bestLen = int.MinValue;
+        List<Diag2> result = [];
+        List<Diag2> path = [];
+        Dictionary<(int, int), int> scores = [];
+
+        FindLDSRecursive(diags, 0, ref bestLen, 0, 0, 0, path, result);
+        return result.ToArray();
+    }
+
+    public static List<Diag2> FindBDS(List<Diag2> diags, int rows, int cols)
+    {
+        diags.Sort(
+            (a, b) =>
+            {
+                return b.Len - a.Len;
+            }
+        );
+
+        Dictionary<(Range2, Range2), (int, List<Diag2>)> cache = [];
+
+        var res = FindBDS(diags, new Range2(0, rows), new Range2(0, cols), cache);
+        Console.WriteLine($">{res.Item1}");
+
+        return res.Item2;
+    }
+
+    private static (int, List<Diag2>) FindBDS(
+        List<Diag2> diags,
+        Range2 xRange,
+        Range2 yRange,
+        Dictionary<(Range2, Range2), (int, List<Diag2>)> cache
+    )
+    {
+        //Console.WriteLine($"{xRange} : {yRange}");
+        if (cache.ContainsKey((xRange, yRange)))
+        {
+            //Console.WriteLine($"Cached {xRange} : {yRange}");
+            return cache[(xRange, yRange)];
+        }
+
+        if (diags.Count == 0 || xRange.Start >= xRange.End || yRange.Start >= yRange.End)
+        {
+            return (0, []);
+        }
+
+        if (diags.Count == 1)
+        {
+            return (diags[0].Len, diags);
+        }
+
+        List<Diag2> res = [];
+        int bestIdx = 0;
+        int bestLen = 0;
+        (int, List<Diag2>) bestL = (0, []);
+        (int, List<Diag2>) bestR = (0, []);
+        for (int i = 0; i < diags.Count && i < 10; i++)
+        {
+            Range2 leftXRange = new(xRange.Start, diags[i].X1);
+            Range2 leftYRange = new(yRange.Start, diags[i].Y1);
+
+            Range2 rightXRange = new(diags[i].X1 + diags[i].Len, xRange.End);
+            Range2 rightYRange = new(diags[i].Y1 + diags[i].Len, yRange.End);
+
+            var l1 = diags
+                .Where(v =>
+                {
+                    if (!IsDiagIncluded(v, leftXRange, leftYRange))
+                    {
+                        return false;
+                    }
+                    return true;
+                })
+                .ToList();
+
+            var l2 = diags
+                .Where(v =>
+                {
+                    if (!IsDiagIncluded(v, rightXRange, rightYRange))
+                    {
+                        return false;
+                    }
+                    return true;
+                })
+                .ToList();
+
+            var left = FindBDS(l1, leftXRange, leftYRange, cache);
+            var right = FindBDS(l2, rightXRange, rightYRange, cache);
+
+            if (left.Item1 + right.Item1 + diags[i].Len > bestLen)
+            {
+                bestIdx = i;
+                bestLen = left.Item1 + right.Item1 + diags[i].Len;
+                bestL = left;
+                bestR = right;
+            }
+        }
+
+        for (int i = 0; i < bestL.Item2.Count; i++)
+        {
+            res.Add(bestL.Item2[i]);
+        }
+        res.Add(diags[bestIdx]);
+
+        for (int i = 0; i < bestR.Item2.Count; i++)
+        {
+            res.Add(bestR.Item2[i]);
+        }
+
+        cache.Add((xRange, yRange), (bestL.Item1 + bestR.Item1 + diags[bestIdx].Len, res));
+
+        return (bestL.Item1 + bestR.Item1 + diags[bestIdx].Len, res);
+    }
+
     private static void FindLDSRecursive(
         Diag2[] diags,
         int current,
@@ -461,7 +584,7 @@ public static class Diff
         // Path heuristic
         int score = currentLen - path.Count;
         //int score = 2* currentLen + path.Count;
-
+        //
         if (score > bestScore)
         {
             bestScore = score;
@@ -483,6 +606,7 @@ public static class Diff
             {
                 continue;
             }
+
             var fx = furthestX;
             var fy = furthestY;
 
@@ -525,6 +649,38 @@ public static class Diff
     {
         var rs = Range2.ComputeRanges(d);
         return IsOverlappingRange(rs[0], xr) || IsOverlappingRange(rs[1], yr);
+    }
+
+    private static bool IsOverlappingDiag(Diag2 d, Point p1, Point p2)
+    {
+        var r1 = Range2.ComputeRanges(d);
+        var r2 = Range2.ComputeRanges(p1, p2);
+
+        return IsOverlappingRange(r1[0], r2[0]) || IsOverlappingRange(r1[1], r2[1]);
+    }
+
+    /* Create a x range and an Y range out of
+     * those 2 points and check if the diagonal is completly included in those ranges
+     * */
+    private static bool IsDiagIncluded(Diag2 d, Point p1, Point p2)
+    {
+        var diagRange = Range2.ComputeRanges(d);
+        var pointRange = Range2.ComputeRanges(p1, p2);
+
+        return IsRangeIncluded(pointRange[0], diagRange[0])
+            && IsRangeIncluded(pointRange[1], diagRange[1]);
+    }
+
+    private static bool IsDiagIncluded(Diag2 d, Range2 r1, Range2 r2)
+    {
+        var diagRange = Range2.ComputeRanges(d);
+
+        return IsRangeIncluded(r1, diagRange[0]) && IsRangeIncluded(r2, diagRange[1]);
+    }
+
+    private static bool IsRangeIncluded(Range2 r1, Range2 r2)
+    {
+        return r1.Start <= r2.Start && r1.End >= r2.End;
     }
 
     private static bool IsOverlappingDiag(Diag2 d1, Diag2 d2)
