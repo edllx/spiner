@@ -19,9 +19,7 @@ public interface IService
 public class Service
 {
     public string Name { get; init; }
-    public string Id { get; init; }
     public string Image { get; init; }
-    public string BuildPath { get; init; }
     public Scope Scope { get; init; }
     public IRun[] Commands { get; private init; }
 
@@ -29,8 +27,7 @@ public class Service
 
     public Service(
         string name,
-        string id,
-        string? image = null,
+        string image,
         string? buildPath = null,
         Scope? scope = null,
         IRun[]? commands = null,
@@ -38,9 +35,7 @@ public class Service
     )
     {
         Name = name;
-        Id = id;
-        Image = image ?? "";
-        BuildPath = buildPath ?? "";
+        Image = image;
         Scope = scope ?? new();
         Commands = commands ?? [];
         Args = args ?? [];
@@ -49,9 +44,7 @@ public class Service
     public Service()
     {
         Name = "";
-        Id = "";
         Image = "";
-        BuildPath = "";
         Scope = new();
         Commands = [];
         Args = [];
@@ -100,9 +93,8 @@ public class Service
     {
         StringBuilder builder = new();
         var image = string.IsNullOrEmpty(Image) ? "" : $" image=\"{Image}\"";
-        var build = string.IsNullOrEmpty(BuildPath) ? "" : $" build=\"{BuildPath}\"";
 
-        builder.Append($"{"".PadRight(4 * depth)}<Service name=\"{Name}\"{image}{build}>\n");
+        builder.Append($"{"".PadRight(4 * depth)}<Service name=\"{Name}\"{image}>\n");
         builder.Append($"{Scope.ToString(depth + 1)}");
         if (Commands.Length > 0)
         {

@@ -13,7 +13,12 @@ public interface IContainerService
     Task StopContainerAsync(string containerId);
     Task RemoveContainerAsync(string containerId, bool force = false);
 
-    Task BuildImageAsync(string buildFilePath, string contextPath, string tag);
+    Task BuildImageAsync(
+        string buildFilePath,
+        string contextPath,
+        string tag,
+        CancellationToken? token = null
+    );
     Task ExecCommandAsync(string containerId, string command, CancellationToken? token = null);
     Task IsContainerHealthyAsync(string containerId);
 }

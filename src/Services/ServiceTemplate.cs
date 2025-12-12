@@ -9,6 +9,7 @@ public partial class ServiceTemplate
     public string? BuildPath { get; init; }
     public Layer[] Layers { get; init; } = [];
     public Scope Scope { get; init; }
+    public string ImageName => $"sp-img-{Name}";
 
     public ServiceTemplate(
         string name,

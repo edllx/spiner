@@ -15,16 +15,6 @@ public class ServiceManager
         Templates = templates;
     }
 
-    public void Reigster(ServiceTemplate template)
-    {
-        var tmp = Templates.Find(v => v.Name == template.Name);
-        if (tmp is null)
-        {
-            return;
-        }
-        Templates.Add(template);
-    }
-
     public ServiceTemplate? GetTemplate(string name)
     {
         return Templates.Find(v => v.Name == name);

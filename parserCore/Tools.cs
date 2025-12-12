@@ -478,7 +478,6 @@ public static class Diff
         Dictionary<(Range2, Range2), (int, List<Diag2>)> cache = [];
 
         var res = FindBDS(diags, new Range2(0, rows), new Range2(0, cols), cache);
-        Console.WriteLine($">{res.Item1}");
 
         return res.Item2;
     }
@@ -490,10 +489,8 @@ public static class Diff
         Dictionary<(Range2, Range2), (int, List<Diag2>)> cache
     )
     {
-        //Console.WriteLine($"{xRange} : {yRange}");
         if (cache.ContainsKey((xRange, yRange)))
         {
-            //Console.WriteLine($"Cached {xRange} : {yRange}");
             return cache[(xRange, yRange)];
         }
 

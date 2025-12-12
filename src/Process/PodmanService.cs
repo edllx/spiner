@@ -31,23 +31,51 @@ public enum ContainerStatus
 
 public partial class PodmanService : IContainerService
 {
-    public async Task BuildImageAsync(string buildFilePath, string context, string tag)
+    public async Task BuildImageAsync(
+        string buildFilePath,
+        string context,
+        string tag,
+        CancellationToken? token = null
+    )
     {
-        CancellationToken token = new();
+        CancellationToken tk = token ?? new();
         var command = $"build --force-rm -t {tag} -f {buildFilePath} {context}";
 
-        var result = await Run(command, token);
+        var result = await Run(command, tk);
+
         switch (result.ExitCode)
         {
             case 0:
-                Console.WriteLine(result.StdOut);
                 break;
             default:
                 Console.WriteLine(result.StdErr);
-                break;
+                throw new Exception(result.StdErr);
         }
+    }
 
-        await Task.CompletedTask;
+    public async Task RemoveImageAsync(string tag, CancellationToken? token = null)
+    {
+        CancellationToken tk = token ?? new();
+        var command = $"image rm {tag}";
+
+        var result = await Run(command, tk);
+
+        switch (result.ExitCode)
+        {
+            case 0:
+                break;
+            default:
+                Console.WriteLine(result.StdErr);
+                throw new Exception(result.StdErr);
+        }
+    }
+
+    public async Task PruneImages()
+    {
+        var command = $"image prune";
+
+        CancellationToken tk = new();
+        var result = await Run(command, tk, prompt: "y");
     }
 
     private async Task ExecCommandAsyncCommit(
@@ -185,7 +213,6 @@ public partial class PodmanService : IContainerService
                     Console.WriteLine(result.StdOut);
                     break;
                 default:
-                    Console.WriteLine($">> {result.ExitCode}");
                     Console.WriteLine(result.StdErr);
                     break;
             }
@@ -221,13 +248,15 @@ public partial class PodmanService
     private async Task<ProcessResult> Run(
         string command,
         CancellationToken token,
-        string workingDirectory = ""
+        string workingDirectory = "",
+        string prompt = ""
     )
     {
         var processStartInfo = new ProcessStartInfo
         {
             FileName = "podman",
             Arguments = command,
+            RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -244,19 +273,21 @@ public partial class PodmanService
 
         process.OutputDataReceived += (sender, e) =>
         {
-            if (e.Data is null)
+            if (e.Data == null)
             {
                 return;
             }
+
             outputBuilder.AppendLine(e.Data);
         };
 
         process.ErrorDataReceived += (sender, e) =>
         {
-            if (e.Data is null)
+            if (e.Data == null)
             {
                 return;
             }
+
             errorBuilder.AppendLine(e.Data);
         };
 
@@ -264,7 +295,15 @@ public partial class PodmanService
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        await process.WaitForExitAsync(token);
+        if (!string.IsNullOrEmpty("prompt"))
+        {
+            // Write input to process (auto-accept prompts)
+            await process.StandardInput.WriteLineAsync(prompt);
+            await process.StandardInput.FlushAsync();
+            process.StandardInput.Close(); // Important to close stdin
+        }
+
+        await process.WaitForExitAsync();
 
         return new(process.ExitCode, outputBuilder.ToString(), errorBuilder.ToString());
     }

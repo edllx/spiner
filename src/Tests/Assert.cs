@@ -13,7 +13,7 @@ public interface ITestAssert
     string ToString(int depth);
 }
 
-public class TestAssert
+public class TestAssert : Iresovable
 {
     public ITestAssert[] Asserts { get; init; }
 
@@ -39,11 +39,34 @@ public class TestAssert
 
         return builder.ToString();
     }
+
+    public void Resolve(Scope? scope = null)
+    {
+        if (scope is null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < Asserts.Length; i++)
+        {
+            switch (Asserts[i])
+            {
+                case AssertEquals eq:
+                    var val = KeyManager.Resolve(eq.Exptected, scope);
+                    if (val is null)
+                    {
+                        break;
+                    }
+                    eq.Exptected = val;
+                    break;
+            }
+        }
+    }
 }
 
 public class AssertEquals : ITestAssert
 {
-    public string Exptected { get; init; }
+    public string Exptected { get; set; }
     public string Actual { get; init; }
 
     public AssertEquals(string exptected, string actual)

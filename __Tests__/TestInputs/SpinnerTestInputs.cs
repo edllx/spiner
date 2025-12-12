@@ -140,10 +140,8 @@ public partial class TestInputs
                             new Stack([
                                 new(
                                     name: "db",
-                                    id: "",
                                     image: "postgress:17",
                                     scope: new([
-                                        new("CONTAINER_NAME", "db"),
                                         new("POSTGRES_USER", "spiner"),
                                         new(
                                             "POSTGRES_PASSWORD",
@@ -157,26 +155,26 @@ public partial class TestInputs
                                             "DB_CONNECTION_STRING",
                                             $"Server=db;Port=5432;Database={Tools.GenerateRandomString(10, seed: 20, prefix: "DB_")};User ID=spiner;Password={Tools.GenerateRandomString(32, seed: 10)};"
                                         ),
+                                        // auto generated
+                                        new("CONTAINER_NAME", "db"),
                                     ]),
                                     commands:
                                     [
                                         new Copy("./database/Config/schema.sql", "/scripts"),
                                         new Copy("./database/Config/fahrenheit10.sql", "/scripts"),
-                                        new Run("psql -U {{POSTGRES_USER}} -f /scripts/schema.sql"),
-                                        new Run(
-                                            "psql -U {{POSTGRES_USER}} -f /scripts/fahrenheit10.sql"
-                                        ),
+                                        new Run("psql -U spiner -f /scripts/schema.sql"),
+                                        new Run("psql -U spiner -f /scripts/fahrenheit10.sql"),
                                     ]
                                 ),
                                 new(
                                     name: "api",
-                                    id: "",
-                                    image: "IMG-api",
+                                    image: "sp-img-api",
                                     scope: new([
                                         new(
                                             "DB_CONNECTION_STRING",
                                             $"Server=db;Port=5432;Database={Tools.GenerateRandomString(10, seed: 20, prefix: "DB_")};User ID=spiner;Password={Tools.GenerateRandomString(32, seed: 10)};"
                                         ),
+                                        new("CONTAINER_NAME", "api"),
                                     ]),
                                     commands: []
                                 ),
@@ -185,14 +183,15 @@ public partial class TestInputs
                                 new(
                                     mode: "sync",
                                     scope: new([
-                                        new("id", ""),
+                                        new("id", "random-id"),
                                         new("temperature", "105"),
                                         new("type", "Celsius"),
                                     ]),
                                     testSet:
                                     [
                                         new(
-                                            request: new(path: "weather", method: "GET"),
+                                            scope: new(),
+                                            request: new("getall", path: "weather", method: "GET"),
                                             response: null,
                                             asserts: new([
                                                 new AssertEquals(
@@ -201,12 +200,17 @@ public partial class TestInputs
                                                 ),
                                                 new AssertEquals(
                                                     "3",
-                                                    "{{response['json']#lenght}}"
+                                                    "{{response['json']#length}}"
                                                 ),
                                             ])
                                         ),
                                         new(
+                                            scope: new([
+                                                new("temperature", "105"),
+                                                new("type", "Celsius"),
+                                            ]),
                                             request: new(
+                                                "add",
                                                 path: "weather/add",
                                                 method: "POST",
                                                 body: new(
@@ -233,7 +237,12 @@ public partial class TestInputs
                                             ])
                                         ),
                                         new(
-                                            request: new(path: "weather/{{id}}", method: "GET"),
+                                            scope: new([new("id", "random-id")]),
+                                            request: new(
+                                                "get",
+                                                path: "weather/random-id",
+                                                method: "GET"
+                                            ),
                                             asserts: new([
                                                 new AssertEquals(
                                                     "object",
@@ -246,14 +255,20 @@ public partial class TestInputs
                                             ])
                                         ),
                                         new(
+                                            scope: new([
+                                                new("id", "random-id"),
+                                                new("temperature", "50"),
+                                                new("type", "Celsius"),
+                                            ]),
                                             request: new(
+                                                "patch",
                                                 path: "weather",
                                                 method: "PATCH",
                                                 body: new(
                                                     "json",
                                                     keys:
                                                     [
-                                                        new("id", ""),
+                                                        new("id", "random-id"),
                                                         new("temperature", "50"),
                                                         new("type", "Celsius"),
                                                     ]
@@ -265,13 +280,14 @@ public partial class TestInputs
                                                     "{{response['json']#type}}"
                                                 ),
                                                 new AssertEquals(
-                                                    "{{id}}",
+                                                    "random-id",
                                                     "{{response['json']['id']}}"
                                                 ),
                                             ])
                                         ),
                                         new(
-                                            request: new(path: "weather", method: "GET"),
+                                            scope: new(),
+                                            request: new("getall", path: "weather", method: "GET"),
                                             response: null,
                                             asserts: new([
                                                 new AssertEquals(
@@ -280,7 +296,7 @@ public partial class TestInputs
                                                 ),
                                                 new AssertEquals(
                                                     "4",
-                                                    "{{response['json']#lenght}}"
+                                                    "{{response['json']#length}}"
                                                 ),
                                             ])
                                         ),

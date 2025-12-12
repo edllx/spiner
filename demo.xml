@@ -28,7 +28,7 @@
       </Layer>
     </Service  >
 
-    <Service name="api" build="./API.Dockerfile">
+    <Service name="api" build="/home/etienne/Desktop/repository/demo/tya/API.Dockerfile">
       <Key name="DB_CONNECTION_STRING"/>
     </Service>
   </Services>

@@ -59,7 +59,11 @@ public class RequestBody : Iresovable
 
         for (int i = 0; i < Keys.Length; i++)
         {
-            var str = KeyManager.Resolve(Keys[i].Value, scope.Keys.ToArray());
+            var str = KeyManager.Resolve(Keys[i].Value, scope);
+            if (str is null)
+            {
+                continue;
+            }
             Keys[i].Resolve(str);
         }
     }

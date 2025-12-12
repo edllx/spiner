@@ -5,7 +5,6 @@ namespace spinner;
 public class Test
 {
     public TestRequest? Request { get; init; }
-
     public TestResponse? Response { get; init; }
     public TestAssert? Asserts { get; init; }
     public Scope Scope { get; init; }
@@ -29,6 +28,31 @@ public class Test
         Scope = scope ?? new();
         Asserts = asserts;
         Response = response;
+    }
+
+    public void Resolve(Scope? scope = null)
+    {
+        // Resolve Scope
+        if (Scope.Parent is not null)
+        {
+            for (int i = 0; i < Scope.Keys.Count; i++)
+            {
+                var key = Scope.Keys[i];
+                var val = KeyManager.Resolve(key.Value, Scope.Parent);
+                key.Set(val);
+            }
+        }
+
+        // Resolve request
+        if (Request is not null)
+        {
+            Request.Resolve();
+        }
+
+        if (Asserts is not null)
+        {
+            Asserts.Resolve(Scope);
+        }
     }
 
     public string ToString(int depth = 0)

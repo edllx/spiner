@@ -253,12 +253,17 @@ public partial class App
             }
         }
 
+        var image = serviceTemplate.Image;
+
+        if (string.IsNullOrEmpty(image))
+        {
+            image = $"sp-img-{serviceTemplate.Name}";
+        }
+
         var service = new Service(
             serviceTemplate.Name,
-            "testId",
             args: args.ToArray(),
-            image: serviceTemplate.Image,
-            buildPath: serviceTemplate.BuildPath,
+            image: image,
             scope: serviceScope,
             commands: serviceCommands.ToArray()
         );

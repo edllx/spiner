@@ -94,6 +94,48 @@ public class KeyManager
         return resovedValue;
     }
 
+    public static string Resolve(string value, Scope scope)
+    {
+        KeyParser parser = new();
+
+        var res = parser.Parse(value);
+        var token = res.Token as KeyToken;
+        if (token is null)
+        {
+            throw new Exception("Faile to parse value");
+        }
+        //Console.WriteLine($"{token.ToString(value)} : {value}");
+
+        string resovedValue = string.Join(
+            "",
+            token.Tokens.Select(val =>
+            {
+                var buffer = new StringBuilder();
+                switch (val)
+                {
+                    case TextToken text:
+                        buffer.Append(value.AsSpan().Slice(text.Body.Start, text.Body.Length));
+                        break;
+
+                    case KeyRefToken t:
+
+                        var name = value.AsSpan().Slice(t.Name.Start, t.Name.Length).ToString();
+
+                        var y = scope.Get(name) ?? "";
+
+                        buffer.Append(y);
+                        break;
+
+                    default:
+                        break;
+                }
+                return buffer.ToString();
+            })
+        );
+
+        return resovedValue;
+    }
+
     private static void Resolve(
         Dictionary<string, (int, KeyToken)> dictionary,
         Key[] keys,

@@ -169,6 +169,7 @@ public partial class App
         for (int i = 0; i < testsTests.Count; i++)
         {
             testsTests[i].Scope.Parent = testsScope;
+            testsTests[i].Resolve();
         }
 
         return (T)(object)new Tests(testSet: testsTests.ToArray(), mode: mode, scope: testsScope);
@@ -230,9 +231,7 @@ public partial class App
             return default(T);
         }
 
-        List<Key> testKeys = HandleElement<List<Key>>(new(token, request.Source)) ?? [];
-
-        Scope testScope = new(testKeys);
+        Scope testScope = new();
         TestRequest? testRequest = null;
         TestAssert? testAssert = null;
         TestResponse? testResponse = null;
@@ -248,6 +247,12 @@ public partial class App
             {
                 case "Request":
                     testRequest = HandleElement<TestRequest>(new(stk, request.Source));
+                    if (testRequest is null)
+                    {
+                        break;
+                    }
+
+                    testScope = testRequest.Scope;
                     break;
 
                 case "Asserts":
@@ -291,20 +296,20 @@ public partial class App
         // Set body values using request Args
         List<Key> testRequestkeys = HandleElement<List<Key>>(new(token, request.Source)) ?? [];
 
-        for (int i = 0; i < testRequestkeys.Count; i++)
+        for (int i = 0; i < token.Children.Length; i++)
         {
-            var k = testRequestBody.Keys.FirstOrDefault(v => v.Name == testRequestkeys[i].Name);
-
-            if (k is null)
+            var arg = HandleElement<Arg>(new(token.Children[i], request.Source));
+            if (arg is null)
             {
                 continue;
             }
-            k.Value = testRequestkeys[i].Value;
+            testRequestScope.Set(arg.Key, arg.Value);
         }
 
         return (T)
             (object)
                 new TestRequest(
+                    name: name,
                     path: testRequestTemplate.Path,
                     method: testRequestTemplate.Method,
                     scope: testRequestScope,
