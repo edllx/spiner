@@ -29,7 +29,7 @@ public enum ContainerStatus
     unknown,
 }
 
-public partial class PodmanService : IContainerService
+public partial class PodmanService
 {
     public async Task BuildImageAsync(
         string buildFilePath,
@@ -48,7 +48,39 @@ public partial class PodmanService : IContainerService
             case 0:
                 break;
             default:
-                Console.WriteLine(result.StdErr);
+                throw new Exception(result.StdErr);
+        }
+    }
+
+    public async Task BuildPod(string name, (int, int)[] ports)
+    {
+        CancellationToken tk = new();
+
+        var command =
+            $"pod create --name {name} {string.Join(" ", ports.Select(v => $"-p {v.Item1}:{v.Item2}"))}";
+        var result = await Run(command, tk);
+
+        switch (result.ExitCode)
+        {
+            case 0:
+                break;
+            default:
+                throw new Exception(result.StdErr);
+        }
+    }
+
+    public async Task RemovePod(string name, bool force = true)
+    {
+        CancellationToken tk = new();
+
+        var command = $"pod rm -f {name}";
+        var result = await Run(command, tk);
+
+        switch (result.ExitCode)
+        {
+            case 0:
+                break;
+            default:
                 throw new Exception(result.StdErr);
         }
     }
@@ -65,7 +97,6 @@ public partial class PodmanService : IContainerService
             case 0:
                 break;
             default:
-                Console.WriteLine(result.StdErr);
                 throw new Exception(result.StdErr);
         }
     }
@@ -95,6 +126,7 @@ public partial class PodmanService : IContainerService
                     Console.WriteLine(result.StdOut);
                     break;
                 default:
+
                     Console.WriteLine(result.StdErr);
                     break;
             }
@@ -121,6 +153,24 @@ public partial class PodmanService : IContainerService
                 await Task.Delay(200);
                 await ExecCommandAsync(containerId, cmd, token);
                 break;
+        }
+    }
+
+    public async Task Copy(string source, string dest, string containerId)
+    {
+        CancellationToken token = new();
+        var command = $"cp {source} {containerId}:{dest}";
+
+        Console.WriteLine(command);
+        try
+        {
+            ProcessResult result = await Run(command, token);
+            Console.WriteLine(result.StdOut);
+            Console.WriteLine(result.StdErr);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
         }
     }
 
@@ -179,6 +229,7 @@ public partial class PodmanService : IContainerService
         string name,
         (string, string)[] envVariables,
         (int, int)[] ports,
+        string pod = "",
         bool replace = true
     )
     {
@@ -187,19 +238,28 @@ public partial class PodmanService : IContainerService
         command.Append("run -d");
         command.Append($" --name {name}");
 
+        if (!string.IsNullOrEmpty(pod))
+        {
+            command.Append($" --pod {pod}");
+        }
+
         if (replace)
         {
             command.Append(" --replace");
         }
 
-        for (int i = 0; i < envVariables.Length; i++)
+        if (envVariables.Length > 0)
         {
-            command.Append($" -e {envVariables[i].Item1}={envVariables[i].Item2}");
+            command.Append(" ");
+            command.Append(
+                string.Join(" ", envVariables.Select(v => $"-e {v.Item1}=\"{v.Item2}\""))
+            );
         }
 
-        for (int i = 0; i < ports.Length; i++)
+        if (ports.Length > 0)
         {
-            command.Append($" -p {ports[i].Item1}:{ports[i].Item2}");
+            command.Append(" ");
+            command.Append(string.Join(" ", ports.Select(v => $"-p {v.Item1}:{v.Item2}")));
         }
 
         command.Append($" {image}");

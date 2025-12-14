@@ -20,6 +20,8 @@ public class Service
 {
     public string Name { get; init; }
     public string Image { get; init; }
+    public bool Target { get; init; } = false;
+    public int Port { get; init; } = 3200;
     public Scope Scope { get; init; }
     public IRun[] Commands { get; private init; }
 
@@ -29,6 +31,7 @@ public class Service
         string name,
         string image,
         string? buildPath = null,
+        bool? target = null,
         Scope? scope = null,
         IRun[]? commands = null,
         Arg[]? args = null
@@ -36,6 +39,7 @@ public class Service
     {
         Name = name;
         Image = image;
+        Target = target ?? false;
         Scope = scope ?? new();
         Commands = commands ?? [];
         Args = args ?? [];
@@ -45,6 +49,7 @@ public class Service
     {
         Name = "";
         Image = "";
+        Target = false;
         Scope = new();
         Commands = [];
         Args = [];
@@ -93,8 +98,9 @@ public class Service
     {
         StringBuilder builder = new();
         var image = string.IsNullOrEmpty(Image) ? "" : $" image=\"{Image}\"";
+        var exposed = Target ? " target" : "";
 
-        builder.Append($"{"".PadRight(4 * depth)}<Service name=\"{Name}\"{image}>\n");
+        builder.Append($"{"".PadRight(4 * depth)}<Service name=\"{Name}\"{image}{exposed}>\n");
         builder.Append($"{Scope.ToString(depth + 1)}");
         if (Commands.Length > 0)
         {

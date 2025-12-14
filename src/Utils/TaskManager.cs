@@ -10,6 +10,8 @@ public abstract class TaskResultBase
     public bool Success = true;
 }
 
+public class TaskArgs { }
+
 public class TaskResult : TaskResultBase
 {
     public string Error = "";
@@ -51,11 +53,9 @@ public abstract class BaseTask
 
 public class TaskSequence : BaseTask
 {
-    CancellationToken _token = new();
-
     public override async Task<TaskResultBase> Run()
     {
-        TaskResultBase result = await ProcessFrom(0);
+        TaskResultBase result = await Process();
         try
         {
             return result;
@@ -66,36 +66,33 @@ public class TaskSequence : BaseTask
         }
     }
 
-    private async Task<TaskResult> Process(int idx)
+    private async Task<TaskResultSet> Process(int idx = 0)
     {
         if (idx >= _tasks.Count || idx < 0)
         {
-            return new TaskResult() { Success = false };
+            return new();
         }
 
-        try
-        {
-            _token = new();
-            return await Task.Run(_tasks[idx]);
-        }
-        catch (Exception ex)
-        {
-            return new TaskResult() { Success = false, Error = ex.Message };
-            // TODO retry policie
-        }
-    }
+        List<TaskResult> results = [];
 
-    private async Task<TaskResultSet> ProcessFrom(int idx)
-    {
-        List<TaskResult> res = [];
-        res.Add(await Process(idx));
-        TaskResultSet r = await ProcessFrom(idx + 1);
-        foreach (var item in r.Results)
+        for (int i = idx; i < _tasks.Count; i++)
         {
-            res.Add(item);
+            try
+            {
+                var res = await Task.Run(() =>
+                {
+                    return _tasks[i].Invoke();
+                });
+                results.Add(res);
+            }
+            catch (Exception ex)
+            {
+                var r = new TaskResult() { Success = false, Error = ex.Message };
+                results.Add(r);
+            }
         }
 
-        return new TaskResultSet() { Results = res.ToArray() };
+        return new() { Results = results.ToArray() };
     }
 }
 
@@ -105,19 +102,12 @@ public class TaskBatch : BaseTask
     {
         try
         {
-            TaskResult[] res = await Task.WhenAll(
-                _tasks.Select(async v =>
-                {
-                    var res = await Task.Run(v);
-                    return res;
-                })
-            );
+            TaskResult[] res = await Task.WhenAll(_tasks.Select(v => Task.Run(() => v.Invoke())));
             return new() { Results = res };
         }
         catch (Exception)
         {
             return new();
-            // TODO retry policie
         }
     }
 

@@ -67,7 +67,7 @@ public class TestAssert : Iresovable
 public class AssertEquals : ITestAssert
 {
     public string Exptected { get; set; }
-    public string Actual { get; init; }
+    public string Actual { get; set; }
 
     public AssertEquals(string exptected, string actual)
     {

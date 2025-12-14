@@ -28,7 +28,7 @@
       </Layer>
     </Service  >
 
-    <Service name="api" build="./API.Dockerfile">
+    <Service name="api" build="/home/etienne/Desktop/repository/demo/tya/API.Dockerfile">
       <Key name="DB_CONNECTION_STRING"/>
     </Service>
   </Services>
@@ -82,7 +82,7 @@
         <Request name="getall"/>
         <Asserts>
           <Equals actual="{{response['json']#type}}" expected="array"/>
-          <Equals actual="{{response['json']#length}}" expected="3"/>
+          <Equals actual="{{response['json']#length}}" expected="10"/>
         </Asserts>
       </Test>
 

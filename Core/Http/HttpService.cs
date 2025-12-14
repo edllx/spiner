@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using static spinner.JsonParser;
 
 namespace spinner;
 
@@ -32,10 +33,73 @@ public class HttpResponse : IDisposable
     {
         if (Document is null)
         {
-            throw new InvalidJsonExeption();
+            return new() { Path = path, Value = "" };
         }
 
-        return JsonParser.Find(path, Document, path);
+        return JsonParser.Find(path, Document);
+    }
+
+    public JsonResponse JsonFind(string path, Scope scope)
+    {
+        if (Document is null)
+        {
+            return new() { Path = path, Value = "" };
+        }
+
+        var r = ResponseOperator.Parse(new ParseContext(path));
+
+        if (!r.Success)
+        {
+            return new()
+            {
+                Path = path,
+                Value = path,
+                Type = JsonResponseOperatorTokenType.Key,
+            };
+        }
+
+        var jsonToken = (JsonResponseOperatorToken)r.Token;
+        var key = jsonToken.Key.ToString(path);
+
+        switch (jsonToken.Type)
+        {
+            case JsonResponseOperatorTokenType.Operator:
+                var jsonEl = JsonFind(key);
+                return new()
+                {
+                    Path = path,
+                    Found = jsonEl.Found,
+                    Key = key,
+                    Value = jsonEl.Value,
+                    Type = jsonToken.Type,
+                };
+
+            case JsonResponseOperatorTokenType.Status:
+                return new()
+                {
+                    Found = true,
+                    Path = path,
+                    Key = key,
+                    Type = jsonToken.Type,
+                };
+
+            default:
+                var val = scope.Get(key);
+
+                return new()
+                {
+                    Path = path,
+                    Key = key,
+                    Found = val is not null,
+                    Value = val ?? "",
+                    Type = jsonToken.Type,
+                };
+        }
+    }
+
+    public override string ToString()
+    {
+        return $"{StatusCode}\n{Content}\n{Document?.RootElement.ToString()}\n";
     }
 }
 
@@ -94,6 +158,19 @@ public partial class HttpContext : IDisposable
             "application/json"
         );
         HttpResponseMessage response = await Client.PatchAsync(path, stringContent);
+        return await Process(response);
+    }
+
+    public async Task<HttpResponse> Put(string path, object? model)
+    {
+        var jsonContent = JsonSerializer.Serialize(model ?? new { });
+        StringContent stringContent = new StringContent(
+            jsonContent,
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        HttpResponseMessage response = await Client.PutAsync(path, stringContent);
         return await Process(response);
     }
 

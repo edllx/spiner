@@ -511,7 +511,97 @@ public partial class TestInputs
                 }, // Invalid property on array
             },
         },
-        /*
-        */
+    ];
+
+    public static IEnumerable<object[]> JsonResponseInput =
+    [
+        new object[]
+        {
+            """{"items": ["a", "b"]}""",
+            new Scope([new("items", "ab"), new("items['json']['items']#length", "validKey")]),
+            new[]
+            {
+                new JsonResponse
+                {
+                    Found = false,
+                    Path = "{{response['json']['items'][5]}}",
+                    Value = "",
+                    Key = "['items'][5]",
+                    Type = JsonResponseOperatorTokenType.Operator,
+                },
+                new JsonResponse
+                {
+                    Found = true,
+                    Path = "{{response['json']['items']#length}}",
+                    Value = "2",
+                    Key = "['items']#length",
+                    Type = JsonResponseOperatorTokenType.Operator,
+                },
+                new JsonResponse
+                {
+                    Found = true,
+                    Path = "{{items['json']['items']#length}}",
+                    Value = "validKey",
+                    Key = "items['json']['items']#length",
+                    Type = JsonResponseOperatorTokenType.Key,
+                },
+                new JsonResponse
+                {
+                    Found = true,
+                    Path = "{{response['json']['items'][1]}}",
+                    Key = "['items'][1]",
+                    Value = "b",
+                    Type = JsonResponseOperatorTokenType.Operator,
+                },
+                new JsonResponse
+                {
+                    Found = true,
+                    Path = "{{items}}",
+                    Key = "items",
+                    Value = "ab",
+                    Type = JsonResponseOperatorTokenType.Key,
+                },
+                new JsonResponse
+                {
+                    Found = false,
+                    Path = "{{a}}",
+                    Key = "a",
+                    Value = "",
+                    Type = JsonResponseOperatorTokenType.Key,
+                },
+                new JsonResponse
+                {
+                    Found = true,
+                    Path = "{{response['status']}}",
+                    Key = "response['status']",
+                    Value = "",
+                    Type = JsonResponseOperatorTokenType.Status,
+                },
+            },
+        },
+        new object[]
+        {
+            """[{"date":"0001-01-01T00:00:00","temperatureC":21.11,"temperatureF":70},{"date":"0001-01-01T00:00:00","temperatureC":21.67,"temperatureF":71},{"date":"0001-01-01T00:00:00","temperatureC":22.22,"temperatureF":72},{"date":"0001-01-01T00:00:00","temperatureC":22.78,"temperatureF":73},{"date":"0001-01-01T00:00:00","temperatureC":23.34,"temperatureF":74},{"date":"0001-01-01T00:00:00","temperatureC":23.89,"temperatureF":75},{"date":"0001-01-01T00:00:00","temperatureC":24.45,"temperatureF":76},{"date":"0001-01-01T00:00:00","temperatureC":25,"temperatureF":77},{"date":"0001-01-01T00:00:00","temperatureC":25.56,"temperatureF":78},{"date":"0001-01-01T00:00:00","temperatureC":26.11,"temperatureF":79}]""",
+            new Scope([new("items", "ab")]),
+            new[]
+            {
+                new JsonResponse
+                {
+                    Found = true,
+                    Path = "{{response['json']#length}}",
+                    Value = "10",
+                    Key = "#length",
+                    Type = JsonResponseOperatorTokenType.Operator,
+                },
+                new JsonResponse
+                {
+                    Found = true,
+                    Path = "{{response['json']#type}}",
+                    Value = "array",
+                    Key = "#type",
+                    Type = JsonResponseOperatorTokenType.Operator,
+                },
+            },
+        },
     ];
 }

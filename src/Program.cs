@@ -8,6 +8,7 @@ try
 {
     app.Init();
     await app.Start();
+    //Console.WriteLine(app.ToString(0));
 }
 catch (Exception ex)
 {

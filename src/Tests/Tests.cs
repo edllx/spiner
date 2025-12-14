@@ -5,9 +5,10 @@ namespace spinner;
 public class Tests
 {
     public static string DefaultMode { get; } = "sync";
-    private Test[] TestSet;
+    public Test[] TestSet { get; init; }
     public Scope Scope { get; init; }
     public string Mode { get; init; }
+    public string Id { get; } = Tools.GenerateRandomString(20, "testset-");
 
     public Tests(Test[]? testSet = null, string? mode = null, Scope? scope = null)
     {

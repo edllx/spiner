@@ -127,19 +127,20 @@ public partial class App
 
             var src = "";
             var dest = "";
+            src = tk.GetAttribute("source", request.Source) ?? "";
+            dest = tk.GetAttribute("dest", request.Source) ?? "";
+            var filename = "";
+
             switch (tk.Name)
             {
                 case "Copy":
-
-                    src = tk.GetAttribute("source", request.Source) ?? "";
-                    dest = tk.GetAttribute("dest", request.Source) ?? "";
 
                     if (string.IsNullOrEmpty(src) || string.IsNullOrEmpty(dest))
                     {
                         continue;
                     }
 
-                    layerCommands.Add(new Copy(src, dest));
+                    layerCommands.Add(new Copy(src, $"{dest}"));
                     break;
                 case "Run":
                     var cmd = tk.GetAttribute("command", request.Source) ?? "";
@@ -181,11 +182,15 @@ public partial class App
                     {
                         return default(T);
                     }
-                    layerCommands.Add(new Copy(src, "/scripts"));
-                    var filename = src.Split("/").Last().ToString();
+                    filename = src.Split("/").Last().ToString();
+                    layerCommands.Add(new Copy(src, $"/scripts"));
                     layerCommands.Add(
-                        new Run("psql -U {{POSTGRES_USER}} " + $"-f /scripts/{filename}")
+                        new Run(
+                            "bash -c \"while ! pg_isready -U {{POSTGRES_USER}}; do sleep 2; done && psql -U {{POSTGRES_USER}} -d {{POSTGRES_DB}} "
+                                + $" -f /scripts/{filename}\""
+                        )
                     );
+
                     break;
             }
         }
@@ -202,6 +207,9 @@ public partial class App
 
         var name = token.GetAttribute("name", request.Source) ?? "";
         var layer = token.GetAttribute("layer", request.Source) ?? "";
+        var target = token.GetAttribute("target", request.Source) ?? "false";
+        bool.TryParse(target, out var tg);
+
         if (string.IsNullOrEmpty(name))
         {
             return default(T);
@@ -215,7 +223,7 @@ public partial class App
 
         var serviceScope = serviceTemplate.Scope.Copy();
 
-        serviceScope.Set("CONTAINER_NAME", name, false, true);
+        serviceScope.Set("CONTAINER_NAME", "localhost", false, true);
 
         List<Arg> args = [];
 
@@ -263,6 +271,7 @@ public partial class App
         var service = new Service(
             serviceTemplate.Name,
             args: args.ToArray(),
+            target: tg,
             image: image,
             scope: serviceScope,
             commands: serviceCommands.ToArray()

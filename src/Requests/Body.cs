@@ -31,6 +31,16 @@ public class RequestBody : Iresovable
         return new(this);
     }
 
+    public object? Model()
+    {
+        var res = new Dictionary<string, string>();
+        foreach (Key item in Keys)
+        {
+            res.Add(item.Name, item.Value);
+        }
+        return res;
+    }
+
     public string ToString(int depth)
     {
         StringBuilder builder = new();

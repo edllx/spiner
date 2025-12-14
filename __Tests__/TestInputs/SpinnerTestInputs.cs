@@ -8,7 +8,7 @@ public partial class TestInputs
     [
         new(
             name: "db",
-            image: "postgress:17",
+            image: "postgres:17",
             scope: new([
                 new("POSTGRES_USER", "spiner"),
                 new("POSTGRES_PASSWORD", "Generated"),
@@ -140,7 +140,7 @@ public partial class TestInputs
                             new Stack([
                                 new(
                                     name: "db",
-                                    image: "postgress:17",
+                                    image: "postgres:17",
                                     scope: new([
                                         new("POSTGRES_USER", "spiner"),
                                         new(
@@ -153,10 +153,10 @@ public partial class TestInputs
                                         ),
                                         new(
                                             "DB_CONNECTION_STRING",
-                                            $"Server=db;Port=5432;Database={Tools.GenerateRandomString(10, seed: 20, prefix: "DB_")};User ID=spiner;Password={Tools.GenerateRandomString(32, seed: 10)};"
+                                            $"Server=localhost;Port=5432;Database={Tools.GenerateRandomString(10, seed: 20, prefix: "DB_")};User ID=spiner;Password={Tools.GenerateRandomString(32, seed: 10)};"
                                         ),
                                         // auto generated
-                                        new("CONTAINER_NAME", "db"),
+                                        new("CONTAINER_NAME", "localhost"),
                                     ]),
                                     commands:
                                     [
@@ -169,12 +169,13 @@ public partial class TestInputs
                                 new(
                                     name: "api",
                                     image: "sp-img-api",
+                                    target: true,
                                     scope: new([
                                         new(
                                             "DB_CONNECTION_STRING",
-                                            $"Server=db;Port=5432;Database={Tools.GenerateRandomString(10, seed: 20, prefix: "DB_")};User ID=spiner;Password={Tools.GenerateRandomString(32, seed: 10)};"
+                                            $"Server=localhost;Port=5432;Database={Tools.GenerateRandomString(10, seed: 20, prefix: "DB_")};User ID=spiner;Password={Tools.GenerateRandomString(32, seed: 10)};"
                                         ),
-                                        new("CONTAINER_NAME", "api"),
+                                        new("CONTAINER_NAME", "localhost"),
                                     ]),
                                     commands: []
                                 ),

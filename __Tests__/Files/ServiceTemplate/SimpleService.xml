@@ -1,6 +1,6 @@
 <Spinner>
   <Services>
-    <Service name="db" image="postgress:17">
+    <Service name="db" image="postgres:17">
       <Key name="POSTGRES_USER" value="spiner" />
       <GeneratedKey name="POSTGRES_PASSWORD" len="32" />
       <GeneratedKey name="POSTGRES_DB" len="10" />

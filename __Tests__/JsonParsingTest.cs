@@ -7,6 +7,7 @@ namespace __Tests__;
 public class JsonParsingTest
 {
     public static IEnumerable<object[]> TestData => TestInputs.JsonInput;
+    public static IEnumerable<object[]> JsonReponse => TestInputs.JsonResponseInput;
 
     [Theory]
     [MemberData(nameof(TestData))]
@@ -24,6 +25,26 @@ public class JsonParsingTest
             Assert.True(
                 el.Value == actual.Value,
                 $"{json}\nPath: {el.Path}\nExpected: {el.Value}\nActual: {actual.Value}"
+            );
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(JsonReponse))]
+    public void TestJsonResponse(string json, Scope scope, JsonResponse[] expecteds)
+    {
+        var document = JsonDocument.Parse(json);
+        var response = new HttpResponse() { Document = document };
+
+        for (int i = 0; i < expecteds.Length; i++)
+        {
+            JsonResponse el = expecteds[i];
+            string expected = el.ToString();
+            var actual = response.JsonFind(el.Path, scope).ToString();
+
+            Assert.True(
+                expected == actual,
+                $"{json}\n{scope.ToString(0)}\n{Tools.StingDiff(expected, actual)}"
             );
         }
     }

@@ -10,21 +10,42 @@ public struct JsonValue
     public required string Value { get; init; }
 }
 
+public struct JsonResponse
+{
+    public bool Found { get; init; }
+    public required string Path { get; init; }
+    public string Key { get; init; }
+    public string Value { get; init; }
+    public JsonResponseOperatorTokenType Type { get; init; }
+
+    public override string ToString()
+    {
+        return $"Path:{Path}\nFound:{Found}\nKey:{Key}\nValue:{Value}\nType:{Type}";
+    }
+}
+
 public class JsonParser
 {
     private static IParser Spaces = AnyStringP(" \t");
     public static IParser Operator = new JsonOperatorParser();
+    public static IParser ResponseOperator = new JsonResponseOperatorParser();
 
-    public static JsonValue Find(string path, JsonDocument document, string source)
+    public static JsonValue Find(string path, JsonDocument document)
     {
-        if (source is null)
+        if (string.IsNullOrEmpty(path))
         {
-            return new() { Path = path, Value = "" };
+            return new() { Path = path ?? "", Value = "" };
         }
 
         var ops = ExtractOperators(path);
-        var value = Find(ops, 0, document.RootElement, source);
-        return new() { Path = path, Value = value };
+        string? value = Find(ops, 0, document.RootElement, path);
+
+        return new()
+        {
+            Path = path,
+            Value = value ?? "",
+            Found = value is not null,
+        };
     }
 
     public static JsonOperatorToken[] ExtractOperators(string path)
@@ -65,11 +86,16 @@ public class JsonParser
         }
     }
 
-    private static string Find(JsonOperatorToken[] ops, int idx, JsonElement element, string source)
+    private static string? Find(
+        JsonOperatorToken[] ops,
+        int idx,
+        JsonElement element,
+        string source
+    )
     {
         if (idx < 0 || idx >= ops.Length)
         {
-            return "";
+            return null;
         }
 
         var value = ops[idx].Value.ToString(source);
@@ -155,6 +181,7 @@ public class JsonParser
         {
             //Console.WriteLine(ex);
         }
-        return "";
+
+        return null;
     }
 }
