@@ -117,24 +117,7 @@ public partial class PodmanService
     {
         CancellationToken tk = token ?? new();
         var command = $"exec {containerId} {cmd}";
-        try
-        {
-            var result = await Run(command, tk);
-            switch (result.ExitCode)
-            {
-                case 0:
-                    Console.WriteLine(result.StdOut);
-                    break;
-                default:
-
-                    Console.WriteLine(result.StdErr);
-                    break;
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
+        var result = await Run(command, tk);
     }
 
     public async Task ExecCommandAsync(
@@ -161,17 +144,7 @@ public partial class PodmanService
         CancellationToken token = new();
         var command = $"cp {source} {containerId}:{dest}";
 
-        Console.WriteLine(command);
-        try
-        {
-            ProcessResult result = await Run(command, token);
-            Console.WriteLine(result.StdOut);
-            Console.WriteLine(result.StdErr);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
+        ProcessResult result = await Run(command, token);
     }
 
     public async Task IsContainerHealthyAsync(string containerId)
@@ -264,23 +237,7 @@ public partial class PodmanService
 
         command.Append($" {image}");
 
-        try
-        {
-            var result = await Run(command.ToString(), new());
-            switch (result.ExitCode)
-            {
-                case 0:
-                    Console.WriteLine(result.StdOut);
-                    break;
-                default:
-                    Console.WriteLine(result.StdErr);
-                    break;
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
+        var result = await Run(command.ToString(), new());
     }
 
     public async Task StopContainerAsync(string containerId)
@@ -355,12 +312,11 @@ public partial class PodmanService
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        if (!string.IsNullOrEmpty("prompt"))
+        if (!string.IsNullOrEmpty(prompt))
         {
-            // Write input to process (auto-accept prompts)
             await process.StandardInput.WriteLineAsync(prompt);
             await process.StandardInput.FlushAsync();
-            process.StandardInput.Close(); // Important to close stdin
+            process.StandardInput.Close();
         }
 
         await process.WaitForExitAsync();

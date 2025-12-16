@@ -1,0 +1,10 @@
+[Info]: Creating Pod: pod-czv86tktd8yaccpki256c5jwkytv
+[Info]: Creating Container: api in Pod: pod-czv86tktd8yaccpki256c5jwkytv
+[Info]: Creating Container: db in Pod: pod-czv86tktd8yaccpki256c5jwkytv
+[Info]: Test-5cidnlu:GET: localhost:4522/weather
+[Info]: Test-5cidnlu:Assert: {{response['json']#type}} == array Success
+[Info]: Test-5cidnlu:Assert: {{response['json']#length}} == 10 Success
+[Info]: Cleanup started
+[Info]: Cleanning tasks
+[Info]: Cleanning up Pod: pod-czv86tktd8yaccpki256c5jwkytv
+[Info]: Cleanup done
