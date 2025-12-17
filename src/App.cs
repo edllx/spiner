@@ -93,24 +93,41 @@ public partial class App : IDisposable
         _testsBatch = new();
     }
 
-    public void Init()
+    public bool Init()
     {
-        ParseResult res = Parser.Parse(new ParseContext(Args));
-
-        if (!res.Success)
+        try
         {
-            throw new Exception("Fail to parse args");
+            ParseResult res = Parser.Parse(new ParseContext(Args));
+            if (!res.Success)
+            {
+                throw new Exception("Fail to parse args");
+            }
+            CommandToken token = (CommandToken)res.Token;
+            UnwrapCommand(token);
+
+            if (string.IsNullOrEmpty(_inputFile))
+            {
+                throw new MissingCommandArgument("input file");
+            }
+        }
+        catch (MissingCommandArgument)
+        {
+            Console.WriteLine($"Missing input file\n\n{CLIArgParser.Help(string.Join(" ", Path))}");
+            return false;
+        }
+        catch (UnknownCommandExeption)
+        {
+            Console.WriteLine(CLIArgParser.Help(string.Join(" ", Path)));
+            return false;
+        }
+        catch (System.Exception)
+        {
+            Console.WriteLine(CLIArgParser.Help(string.Join(" ", Path)));
+            return false;
         }
 
-        CommandToken token = (CommandToken)res.Token;
-
-        UnwrapCommand(token);
-
-        if (string.IsNullOrEmpty(_inputFile))
-        {
-            throw new MissingCommandArgument("input file");
-        }
         Execute();
+        return true;
     }
 
     public async Task Start()
@@ -151,6 +168,11 @@ public partial class App : IDisposable
                 case "--file":
                     SetFileName(value);
                     break;
+
+                case "-h":
+                case "--help":
+                    Console.WriteLine(CLIArgParser.Help(string.Join(" ", Path)));
+                    throw new Exception("show help");
 
                 case "--debug":
                     Debug = true;

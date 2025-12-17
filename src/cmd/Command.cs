@@ -216,15 +216,16 @@ public class CLICommand : IParser
         // Options
 
         buffer.Append($"Options:\n");
-        for (int i = 0; i < Options.Length; i++)
-        {
-            var opt = Options[i];
 
-            buffer.Append("  ");
-            buffer.Append($"-{(string.IsNullOrEmpty(opt.Alias) ? "   " : $"{opt.Alias}, ")}");
-            buffer.Append($"--{opt.Name}\t\t");
-            buffer.Append($"{Options[i].Description}");
-        }
+        buffer.Append(
+            string.Join(
+                "\n",
+                Options.Select(v =>
+                {
+                    return $" {(string.IsNullOrEmpty(v.Alias) ? "   " : $"-{v.Alias},")} --{v.Name}\t\t{v.Description}";
+                })
+            )
+        );
 
         buffer.Append($"\n");
 

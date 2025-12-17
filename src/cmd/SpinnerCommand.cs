@@ -60,4 +60,14 @@ public class CLIArgParser : IParser
 
         return ParseResult.SuccessAt(choice.Token);
     }
+
+    public static string Help(string command)
+    {
+        switch (command)
+        {
+            case "run":
+                return Run.Help();
+        }
+        return Spinner.Help();
+    }
 }

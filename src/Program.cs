@@ -7,8 +7,12 @@ var podman = new PodmanService();
 
 try
 {
-    app.Init();
-    await app.Start();
+    bool ready = app.Init();
+
+    if (ready)
+    {
+        await app.Start();
+    }
 }
 catch (Exception ex)
 {
