@@ -20,10 +20,6 @@
       </Layer>
 
       <Layer name="bothfandc" from="fahrenheit10,celsius10" >
-        <Run>
-          echo multiline command
-          echo multiline command
-        </Run>
       </Layer>
     </Service  >
 
@@ -86,5 +82,30 @@
       </Test>
     </Tests>
   </TestSuite>
+
+  <TestSuite>
+    <Stack>
+      <Service name="db" layer="bothfandc"/>
+
+      <Service name="api" target="true">
+        <Arg from="db" key="DB_CONNECTION_STRING"/>
+      </Service>
+    </Stack>
+
+    <Tests mode="sync">
+      <Key name="id" value="random-id"/>
+      <Key name="temperature" value="105"/>
+      <Key name="type" value="Celsius"/>
+
+      <Test>
+        <Request name="getall"/>
+        <Asserts>
+          <Equals actual="{{response['json']#type}}" expected="array"/>
+          <Equals actual="{{response['json']#length}}" expected="20"/>
+        </Asserts>
+      </Test>
+    </Tests>
+  </TestSuite>
+
 
 </Spinner>

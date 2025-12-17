@@ -242,9 +242,9 @@ public partial class App : IDisposable
 
     private async Task BuildImages()
     {
-        List<Func<Task<TaskResult>>> imagesTask = [];
         for (int i = 0; i < ServiceManager.Templates.Count; i++)
         {
+            continue;
             var template = ServiceManager.Templates[i];
             if (string.IsNullOrEmpty(template.BuildPath))
             {
@@ -258,7 +258,7 @@ public partial class App : IDisposable
                 b.Append($"/{parts[j]}");
             }
             var ctx = b.ToString();
-            imagesTask.Add(async () =>
+            _imageBuildTasks.Add(async () =>
             {
                 try
                 {
@@ -283,18 +283,29 @@ public partial class App : IDisposable
                 }
             });
 
+            /*
             _cleanUpTasks.Add(async () =>
             {
                 try
                 {
+                    _logger.Log(
+                        $"Cleanning up Image: {template.ImageName}",
+                        logLevel: LogLevel.Info
+                    );
                     await _podman.RemoveImageAsync(template.ImageName);
                     return new();
                 }
                 catch (Exception ex)
                 {
+                    _logger.Log(
+                        $"Image cleanup failed: {template.ImageName} : {ex.Message}",
+                        logLevel: LogLevel.Info
+                    );
+
                     return new() { Success = false, Error = ex.Message };
                 }
             });
+            */
         }
 
         //_imageBuildTasks.SetTasks(imagesTask);
@@ -321,14 +332,18 @@ public partial class App : IDisposable
 
                 foreach (var item in suite.TestStack.Services)
                 {
+                    var containerName = Tools.GenerateRandomString(
+                        item.Name.Length + 16,
+                        $"sp-{item.Name}-"
+                    );
                     batch.Add(async () =>
                     {
                         try
                         {
-                            _logger.Log($"Creating Container: {item.Name} in Pod: {podName}");
+                            _logger.Log($"Creating Container: {containerName} in Pod: {podName}");
                             await _podman.RunContainerAsync(
                                 item.Image,
-                                $"sp-{item.Name}",
+                                containerName,
                                 ports: [],
                                 pod: podName,
                                 envVariables: item.Scope.Keys.Select(v =>
@@ -337,28 +352,73 @@ public partial class App : IDisposable
                                     })
                                     .ToArray()
                             );
-                            await _podman.ExecCommandAsync($"sp-{item.Name}", "rm -rf scripts");
-                            await _podman.ExecCommandAsync($"sp-{item.Name}", "mkdir scripts");
+                            await _podman.ExecCommandAsync(containerName, "rm -rf scripts");
+                            await _podman.ExecCommandAsync(containerName, "mkdir scripts");
 
-                            foreach (var cmd in item.Commands)
+                            var cmdSequence = new TaskSequence();
+
+                            for (int i = 0; i < item.Commands.Length; i++)
                             {
-                                switch (cmd)
+                                var cmd = item.Commands[i];
+                                try
                                 {
-                                    case Copy cp:
+                                    string command = cmd.ToString(0);
+                                    if (command.Length > 40)
+                                    {
+                                        command = $"{command.AsSpan().Slice(0, 40).ToString()} ...";
+                                    }
 
-                                        var filename = cp.Source.Split("/").Last().ToString();
-                                        await _podman.Copy(
-                                            cp.Source,
-                                            $"{cp.Destination}/{filename}",
-                                            $"sp-{item.Name}"
-                                        );
-                                        break;
+                                    switch (cmd)
+                                    {
+                                        case Copy cp:
 
-                                    case Run run:
-                                        await _podman.ExecCommandAsync($"sp-{item.Name}", run.Text);
-                                        break;
+                                            var filename = cp.Source.Split("/").Last().ToString();
+                                            cmdSequence.Add(async () =>
+                                            {
+                                                _logger.Log(
+                                                    $"Copy :{filename} in : {containerName}",
+                                                    LogLevel.Info
+                                                );
+
+                                                await _podman.Copy(
+                                                    cp.Source,
+                                                    $"{cp.Destination}/{filename}",
+                                                    containerName
+                                                );
+
+                                                return new();
+                                            });
+                                            break;
+
+                                        case Run run:
+                                            cmdSequence.Add(async () =>
+                                            {
+                                                _logger.Log(
+                                                    $"Run :{run.Text} in : {containerName}",
+                                                    LogLevel.Info
+                                                );
+
+                                                await _podman.ExecCommandAsync(
+                                                    containerName,
+                                                    run.Text
+                                                );
+                                                return new();
+                                            });
+                                            break;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.Log(
+                                        $"Failed command on container: {containerName} : {ex.Message}",
+                                        LogLevel.Warning
+                                    );
                                 }
                             }
+
+                            await cmdSequence.Run();
+
+                            _logger.Log($"Container: {containerName} Created");
                             return new();
                         }
                         catch (Exception ex)
@@ -380,6 +440,7 @@ public partial class App : IDisposable
                     }
                     catch (Exception ex)
                     {
+                        _logger.Log($"Comand failed: {ex.Message}", LogLevel.Error);
                         return new() { Success = false, Error = ex.Message };
                     }
                 });
@@ -490,7 +551,7 @@ public partial class App : IDisposable
                                 );
 
                                 logger.Log(
-                                    $"{id}:Assert: {eq.Actual} == {eq.Exptected} {(eqq.evaluate().Success ? "Success" : "Failed")}"
+                                    $"{id}:Assert: {eq.Actual} == {eq.Exptected} {(eqq.evaluate().Success ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)} Found: {eqq.Actual}")}"
                                 );
 
                                 break;

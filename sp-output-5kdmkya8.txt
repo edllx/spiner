@@ -1,8 +1,0 @@
-[Info]: Creating Pod: pod-6d2zz6zgfj8rcllc4n9j4tkcrtci
-[Info]: Creating Container: db in Pod: pod-6d2zz6zgfj8rcllc4n9j4tkcrtci
-[Info]: Creating Container: api in Pod: pod-6d2zz6zgfj8rcllc4n9j4tkcrtci
-[Info]: GET: localhost:5625/weather
-[Info]: Cleanup started
-[Info]: Cleanning tasks
-[Info]: Cleanning up Pod: pod-6d2zz6zgfj8rcllc4n9j4tkcrtci
-[Info]: Cleanup done

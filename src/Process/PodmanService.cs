@@ -118,6 +118,14 @@ public partial class PodmanService
         CancellationToken tk = token ?? new();
         var command = $"exec {containerId} {cmd}";
         var result = await Run(command, tk);
+
+        switch (result.ExitCode)
+        {
+            case 0:
+                break;
+            default:
+                throw new Exception(result.StdErr);
+        }
     }
 
     public async Task ExecCommandAsync(

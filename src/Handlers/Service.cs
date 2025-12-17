@@ -186,7 +186,7 @@ public partial class App
                     layerCommands.Add(new Copy(src, $"/scripts"));
                     layerCommands.Add(
                         new Run(
-                            "bash -c \"while ! pg_isready -U {{POSTGRES_USER}}; do sleep 2; done && psql -U {{POSTGRES_USER}} -d {{POSTGRES_DB}} "
+                            "bash -c \"while ! pg_isready -U {{POSTGRES_USER}}; do sleep 2; done && psql -U {{POSTGRES_USER}} -d postgres "
                                 + $" -f /scripts/{filename}\""
                         )
                     );

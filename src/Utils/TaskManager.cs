@@ -90,6 +90,7 @@ public class TaskSequence : BaseTask
                 var r = new TaskResult() { Success = false, Error = ex.Message };
                 results.Add(r);
             }
+            await Task.Delay(1000);
         }
 
         return new() { Results = results.ToArray() };
