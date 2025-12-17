@@ -17,6 +17,10 @@ public class CLIArgParser : IParser
         arg: new("file", type: CLIArgType.String, required: true)
     );
 
+    private static CLIOption RunDebug = new("debug", "Enable Debug logs");
+
+    private static CLIOption RunNoImageRebuil = new("no-image-rebuild", "Disable image rebuil");
+
     private static CLIOption RunInputFile = new(
         "file",
         "File to process",
@@ -27,7 +31,7 @@ public class CLIArgParser : IParser
     public static CLICommand Run = new(
         "run",
         "Run spinner file",
-        options: [HelpOption, RunOutputFile, RunInputFile],
+        options: [HelpOption, RunDebug, RunNoImageRebuil, RunOutputFile, RunInputFile],
         arg: new("file", type: CLIArgType.String),
         subCommands: []
     );
@@ -57,24 +61,3 @@ public class CLIArgParser : IParser
         return ParseResult.SuccessAt(choice.Token);
     }
 }
-
-/*
-public enum CommandType
-{
-    Unknown,
-    Run,
-}
-
-public class SpinnerArgToken : IToken
-{
-    public CommandType Command { get; init; }
-    public Range Arg { get; init; }
-    public CLIOptionToken[] Options { get; init; } = [];
-    public Range Body { get; init; }
-
-    public string ToString(string source, int depth = 0)
-    {
-        return $"{"".PadRight(4 * depth)}<{Command} Arg=\"{Arg.ToString(source)}\" Options\"{string.Join(",", Options.Select(v => v.ToString(source)))}\"/>";
-    }
-}
-*/

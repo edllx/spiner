@@ -208,7 +208,9 @@ public partial class App
         var name = token.GetAttribute("name", request.Source) ?? "";
         var layer = token.GetAttribute("layer", request.Source) ?? "";
         var target = token.GetAttribute("target", request.Source) ?? "false";
+        var logEnabled = token.GetAttribute("logEnabled", request.Source) ?? "false";
         bool.TryParse(target, out var tg);
+        bool.TryParse(logEnabled, out var log);
 
         if (string.IsNullOrEmpty(name))
         {
@@ -272,6 +274,7 @@ public partial class App
             serviceTemplate.Name,
             args: args.ToArray(),
             target: tg,
+            logEnabled: log,
             image: image,
             scope: serviceScope,
             commands: serviceCommands.ToArray()

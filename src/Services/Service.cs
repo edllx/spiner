@@ -19,6 +19,7 @@ public interface IService
 public class Service
 {
     public string Name { get; init; }
+    public bool LogEnabled { get; init; } = false;
     public string Image { get; init; }
     public bool Target { get; init; } = false;
     public int Port { get; init; } = 3200;
@@ -32,6 +33,7 @@ public class Service
         string image,
         string? buildPath = null,
         bool? target = null,
+        bool? logEnabled = null,
         Scope? scope = null,
         IRun[]? commands = null,
         Arg[]? args = null
@@ -40,6 +42,7 @@ public class Service
         Name = name;
         Image = image;
         Target = target ?? false;
+        LogEnabled = logEnabled ?? false;
         Scope = scope ?? new();
         Commands = commands ?? [];
         Args = args ?? [];
@@ -50,6 +53,7 @@ public class Service
         Name = "";
         Image = "";
         Target = false;
+        LogEnabled = false;
         Scope = new();
         Commands = [];
         Args = [];

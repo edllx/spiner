@@ -31,6 +31,21 @@ public enum ContainerStatus
 
 public partial class PodmanService
 {
+    public async Task<bool> ImageExist(string imageId)
+    {
+        CancellationToken tk = new();
+        var command = $"inspect {imageId}";
+        var result = await Run(command, tk);
+
+        switch (result.ExitCode)
+        {
+            case 0:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     public async Task BuildImageAsync(
         string buildFilePath,
         string context,
@@ -251,6 +266,36 @@ public partial class PodmanService
     public async Task StopContainerAsync(string containerId)
     {
         await Task.CompletedTask;
+    }
+
+    public async Task<string> GetContainerLogs(string containerId)
+    {
+        string command = $"container logs {containerId}";
+
+        var result = await Run(command.ToString(), new());
+
+        switch (result.ExitCode)
+        {
+            case 0:
+                return result.StdOut;
+            default:
+                return "";
+        }
+    }
+
+    public async Task<string> GetPodLogs(string podId)
+    {
+        string command = $"pod logs {podId}";
+
+        var result = await Run(command.ToString(), new());
+
+        switch (result.ExitCode)
+        {
+            case 0:
+                return result.StdOut;
+            default:
+                return "";
+        }
     }
 }
 

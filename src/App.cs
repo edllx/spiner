@@ -22,11 +22,14 @@ public partial class App : IDisposable
     private string _inputFile = "";
     private List<(string, string)> Options = [];
     private List<string> Path = [];
-    bool _done = false;
+
+    public bool Done { get; private set; } = false;
+    public bool Debug { get; private set; } = false;
+    public bool ImageRebuild { get; private set; } = true;
 
     private readonly TaskManager _taskManager = new();
     private readonly PodmanService _podman = new();
-    private readonly Logger _logger = new();
+    public readonly Logger Logger = new();
 
     public ServiceManager ServiceManager { get; set; } = new();
     public RequestManager RequestsManager { get; set; } = new();
@@ -36,8 +39,9 @@ public partial class App : IDisposable
     private readonly TaskBatch _cleanUpTasks;
     private readonly TaskBatch _podTasks;
     private readonly TaskBatch _testsBatch;
+    private readonly TaskBatch _testsLogs;
 
-    private readonly Dictionary<string, int> _portMapping = [];
+    public readonly Dictionary<string, int> PortMapping = [];
 
     public App(string args)
     {
@@ -46,15 +50,22 @@ public partial class App : IDisposable
         _cleanUpTasks = new();
         _podTasks = new();
         _testsBatch = new();
+        _testsLogs = new();
         _cleanUpTasks.OnTaskFinished += HandleTaskCleaned;
         _imageBuildTasks.OnTaskFinished += HandleImageBuilt;
         _podTasks.OnTaskFinished += HandlePodBuilt;
         _testsBatch.OnTaskFinished += HandleTestsFinished;
+        _testsLogs.OnTaskFinished += HandleTestsLogsFinished;
+    }
+
+    private void HandleTestsLogsFinished(object? sender, TaskResultBase e)
+    {
+        _ = CleanUp();
     }
 
     private void HandleTestsFinished(object? sender, TaskResultBase e)
     {
-        _ = CleanUp();
+        _ = _taskManager.ScheduleTask(_testsLogs);
     }
 
     private void HandlePodBuilt(object? sender, TaskResultBase e)
@@ -65,18 +76,17 @@ public partial class App : IDisposable
 
     private void HandleTaskCleaned(object? sender, TaskResultBase e)
     {
-        _done = true;
+        Done = true;
     }
 
     private void HandleImageBuilt(object? sender, TaskResultBase e)
     {
-        // Do somthing
-        // Ready to build test
         _ = CreatePods();
     }
 
     public App()
     {
+        _testsLogs = new();
         _imageBuildTasks = new();
         _cleanUpTasks = new();
         _podTasks = new();
@@ -111,7 +121,7 @@ public partial class App : IDisposable
 
     private async Task Loop()
     {
-        while (!_done)
+        while (!Done)
         {
             await Task.Delay(2000);
         }
@@ -135,9 +145,20 @@ public partial class App : IDisposable
                 throw new MissingOptionArgument(key);
             }
 
-            if (key == "-f" || key == "--file")
+            switch (key)
             {
-                SetFileName(value);
+                case "-f":
+                case "--file":
+                    SetFileName(value);
+                    break;
+
+                case "--debug":
+                    Debug = true;
+                    break;
+
+                case "--no-image-rebuild":
+                    ImageRebuild = false;
+                    break;
             }
 
             Options.Add((key, value));
@@ -177,7 +198,7 @@ public partial class App : IDisposable
         SpinnerParser parser = new SpinnerParser();
         if (!File.Exists(_inputFile))
         {
-            _logger.Log("Input file: {_inputFile} not found", logLevel: LogLevel.Critial);
+            Logger.Log("Input file: {_inputFile} not found", logLevel: LogLevel.Critial);
             return;
         }
         string source = File.ReadAllText(_inputFile);
@@ -185,7 +206,7 @@ public partial class App : IDisposable
 
         if (!res.Success || res.Token is not SpinnerToken token)
         {
-            _logger.Log(
+            Logger.Log(
                 $"Input file parsing failed: {res.ToString(_inputFile)}",
                 logLevel: LogLevel.Error
             );
@@ -244,12 +265,13 @@ public partial class App : IDisposable
     {
         for (int i = 0; i < ServiceManager.Templates.Count; i++)
         {
-            continue;
             var template = ServiceManager.Templates[i];
+
             if (string.IsNullOrEmpty(template.BuildPath))
             {
                 continue;
             }
+
             var parts = template.BuildPath.Split("/");
             StringBuilder b = new();
 
@@ -258,11 +280,36 @@ public partial class App : IDisposable
                 b.Append($"/{parts[j]}");
             }
             var ctx = b.ToString();
+
             _imageBuildTasks.Add(async () =>
             {
                 try
                 {
-                    _logger.Log($"Creating Image {template.ImageName}", logLevel: LogLevel.Info);
+                    bool imageExist = await _podman.ImageExist(template.ImageName);
+                    if (imageExist && !ImageRebuild)
+                    {
+                        if (Debug)
+                        {
+                            Logger.Log(
+                                $"Image {template.ImageName} exist and image-rebuid disabled",
+                                logLevel: LogLevel.Debug
+                            );
+                        }
+
+                        return new();
+                    }
+
+                    if (imageExist)
+                    {
+                        Logger.Log(
+                            $"Rebuilding Image {template.ImageName}",
+                            logLevel: LogLevel.Info
+                        );
+                    }
+                    else
+                    {
+                        Logger.Log($"Building Image {template.ImageName}", logLevel: LogLevel.Info);
+                    }
 
                     await _podman.BuildImageAsync(
                         buildFilePath: template.BuildPath,
@@ -274,7 +321,7 @@ public partial class App : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.Log(
+                    Logger.Log(
                         $"Image {template.ImageName} Creation failed\n{ex.Message}",
                         logLevel: LogLevel.Warning
                     );
@@ -282,32 +329,7 @@ public partial class App : IDisposable
                     return new() { Success = false, Error = ex.Message };
                 }
             });
-
-            /*
-            _cleanUpTasks.Add(async () =>
-            {
-                try
-                {
-                    _logger.Log(
-                        $"Cleanning up Image: {template.ImageName}",
-                        logLevel: LogLevel.Info
-                    );
-                    await _podman.RemoveImageAsync(template.ImageName);
-                    return new();
-                }
-                catch (Exception ex)
-                {
-                    _logger.Log(
-                        $"Image cleanup failed: {template.ImageName} : {ex.Message}",
-                        logLevel: LogLevel.Info
-                    );
-
-                    return new() { Success = false, Error = ex.Message };
-                }
-            });
-            */
         }
-
         await _taskManager.ScheduleTask(_imageBuildTasks);
         _taskManager.Start();
     }
@@ -322,24 +344,35 @@ public partial class App : IDisposable
                 var podName = Tools.GenerateRandomString(32, "pod-");
                 int port = Random.Shared.Next(3500, 6500);
 
-                while (_portMapping.ContainsValue(port))
+                while (PortMapping.ContainsValue(port))
                 {
                     port = Random.Shared.Next(3500, 6500);
                 }
 
-                _portMapping.Add(tests.Id, port);
+                PortMapping.Add(tests.Id, port);
 
-                foreach (var item in suite.TestStack.Services)
+                foreach (Service item in suite.TestStack.Services)
                 {
                     var containerName = Tools.GenerateRandomString(
                         item.Name.Length + 16,
                         $"sp-{item.Name}-"
                     );
+
+                    if (Debug && item.LogEnabled)
+                    {
+                        _testsLogs.Add(async () =>
+                        {
+                            string logs = await _podman.GetContainerLogs(containerName);
+                            Logger.Log($"Logs:{containerName}\n{logs}", LogLevel.Debug);
+                            return new();
+                        });
+                    }
+
                     batch.Add(async () =>
                     {
                         try
                         {
-                            _logger.Log($"Creating Container: {containerName} in Pod: {podName}");
+                            Logger.Log($"Creating Container: {containerName} in Pod: {podName}");
                             await _podman.RunContainerAsync(
                                 item.Image,
                                 containerName,
@@ -374,10 +407,13 @@ public partial class App : IDisposable
                                             var filename = cp.Source.Split("/").Last().ToString();
                                             cmdSequence.Add(async () =>
                                             {
-                                                _logger.Log(
-                                                    $"Copy :{filename} in : {containerName}",
-                                                    LogLevel.Info
-                                                );
+                                                if (Debug)
+                                                {
+                                                    Logger.Log(
+                                                        $"Copy :{filename} in : {containerName}",
+                                                        LogLevel.Debug
+                                                    );
+                                                }
 
                                                 await _podman.Copy(
                                                     cp.Source,
@@ -392,10 +428,13 @@ public partial class App : IDisposable
                                         case Run run:
                                             cmdSequence.Add(async () =>
                                             {
-                                                _logger.Log(
-                                                    $"Run :{run.Text} in : {containerName}",
-                                                    LogLevel.Info
-                                                );
+                                                if (Debug)
+                                                {
+                                                    Logger.Log(
+                                                        $"Run :{run.Text} in : {containerName}",
+                                                        LogLevel.Debug
+                                                    );
+                                                }
 
                                                 await _podman.ExecCommandAsync(
                                                     containerName,
@@ -408,7 +447,7 @@ public partial class App : IDisposable
                                 }
                                 catch (Exception ex)
                                 {
-                                    _logger.Log(
+                                    Logger.Log(
                                         $"Failed command on container: {containerName} : {ex.Message}",
                                         LogLevel.Warning
                                     );
@@ -417,12 +456,13 @@ public partial class App : IDisposable
 
                             await cmdSequence.Run();
 
-                            _logger.Log($"Container: {containerName} Created");
+                            Logger.Log($"Container: {containerName} Created");
+
                             return new();
                         }
                         catch (Exception ex)
                         {
-                            _logger.Log($"Comand failed: {ex.Message}", LogLevel.Error);
+                            Logger.Log($"Comand failed: {ex.Message}", LogLevel.Error);
                             return new() { Success = false, Error = ex.Message };
                         }
                     });
@@ -432,21 +472,22 @@ public partial class App : IDisposable
                 {
                     try
                     {
-                        _logger.Log($"Creating Pod: {podName}");
+                        Logger.Log($"Creating Pod: {podName}");
                         await _podman.BuildPod(podName, [(port, 8080)]);
                         await batch.Run();
                         return new();
                     }
                     catch (Exception ex)
                     {
-                        _logger.Log($"Comand failed: {ex.Message}", LogLevel.Error);
+                        Logger.Log($"Comand failed: {ex.Message}", LogLevel.Error);
                         return new() { Success = false, Error = ex.Message };
                     }
                 });
 
                 _cleanUpTasks.Add(async () =>
                 {
-                    _logger.Log($"Cleanning up Pod: {podName}");
+                    Logger.Log($"Cleanning up Pod: {podName}");
+
                     await _podman.RemovePod(podName);
                     return new();
                 });
@@ -469,7 +510,7 @@ public partial class App : IDisposable
 
     private void AddTestsToBatch(Tests tests)
     {
-        _portMapping.TryGetValue(tests.Id, out int port);
+        PortMapping.TryGetValue(tests.Id, out int port);
         if (port == 0)
         {
             return;
@@ -481,13 +522,14 @@ public partial class App : IDisposable
                 TaskSequence seq = new();
                 for (int i = 0; i < tests.TestSet.Length; i++)
                 {
-                    var f = HandleRequest(port, tests.TestSet[i], _logger);
+                    var f = HandleRequest(port, tests.TestSet[i], this);
                     seq.Add(f);
                 }
 
                 _testsBatch.Add(async () =>
                 {
                     var res = await seq.Run();
+
                     return new();
                 });
                 break;
@@ -495,7 +537,7 @@ public partial class App : IDisposable
             default:
                 for (int i = 0; i < tests.TestSet.Length; i++)
                 {
-                    var f = HandleRequest(port, tests.TestSet[i], _logger);
+                    var f = HandleRequest(port, tests.TestSet[i], this);
 
                     _testsBatch.Add(f);
                 }
@@ -504,7 +546,7 @@ public partial class App : IDisposable
         }
     }
 
-    private static Func<Task<TaskResult>> HandleRequest(int port, Test test, Logger logger)
+    private static Func<Task<TaskResult>> HandleRequest(int port, Test test, App app)
     {
         return async () =>
         {
@@ -530,18 +572,31 @@ public partial class App : IDisposable
             HttpResponse? response = null;
             try
             {
-                logger.Log($"{id}:{method}: localhost:{port}/{resolvedPath}");
+                app.Logger.Log($"{id}:{method}: localhost:{port}/{resolvedPath}");
                 switch (method)
                 {
                     case "POST":
+                        if (app.Debug && test.Request is not null && test.Request.Body is not null)
+                        {
+                            app.Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
+                        }
+
                         response = await contex.Post(resolvedPath, body);
                         break;
 
                     case "PATCH":
+                        if (app.Debug && test.Request is not null && test.Request.Body is not null)
+                        {
+                            app.Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
+                        }
                         response = await contex.Patch(resolvedPath, body);
                         break;
 
                     case "PUT":
+                        if (app.Debug && test.Request is not null && test.Request.Body is not null)
+                        {
+                            app.Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
+                        }
                         response = await contex.Put(resolvedPath, body);
                         break;
 
@@ -559,7 +614,7 @@ public partial class App : IDisposable
                         var valueR = response.JsonFind(item.Value, test.Scope);
                         if (!valueR.Found)
                         {
-                            logger.Log(
+                            app.Logger.Log(
                                 $"{id}:Set: Did not found a value for {item.Value}",
                                 LogLevel.Warning
                             );
@@ -582,7 +637,7 @@ public partial class App : IDisposable
                                 );
                                 result = eqq.evaluate().Success;
 
-                                logger.Log(
+                                app.Logger.Log(
                                     $"{id}:Assert: {eq.Actual} == {eq.Exptected} {(result ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)} Found: {eqq.Actual}")}"
                                 );
 
@@ -591,7 +646,7 @@ public partial class App : IDisposable
                                 var ntnValue = test.Scope.Get(ntn.Key);
                                 var isEmpty = string.IsNullOrEmpty(ntnValue);
 
-                                logger.Log(
+                                app.Logger.Log(
                                     $"{id}:Assert: {ntn.Key} NOT NULL {(!isEmpty ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)} Found: {ntnValue}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)}")}"
                                 );
 
@@ -604,7 +659,7 @@ public partial class App : IDisposable
             }
             catch (System.Exception ex)
             {
-                logger.Log($"Something failed: {ex.Message}");
+                app.Logger.Log($"Something failed: {ex.Message}");
             }
             finally
             {
@@ -636,16 +691,16 @@ public partial class App : IDisposable
 
     private async Task CleanUp()
     {
-        _logger.Log($"Cleanup started", logLevel: LogLevel.Info);
+        Logger.Log($"Cleanup started", logLevel: LogLevel.Info);
 
         if (_cleanUpTasks is not null)
         {
-            _logger.Log($"Cleanning tasks", logLevel: LogLevel.Info);
+            Logger.Log($"Cleanning tasks", logLevel: LogLevel.Info);
             await _cleanUpTasks.Run();
         }
 
         await _podman.PruneImages();
-        _logger.Log($"Cleanup done", logLevel: LogLevel.Info);
+        Logger.Log($"Cleanup done", logLevel: LogLevel.Info);
     }
 
     public void Dispose()

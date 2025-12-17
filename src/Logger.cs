@@ -12,6 +12,7 @@ public enum LoggerOutput
 public enum LogLevel
 {
     Info,
+    Debug,
     Warning,
     Error,
     Critial,
@@ -45,7 +46,7 @@ public class Logger
 
     public Logger()
     {
-        OutputFile = $"sp-output-{Tools.GenerateRandomString(8)}.txt";
+        OutputFile = $"testOutputs/sp-output-{Tools.GenerateRandomString(8)}.txt";
     }
 
     public Logger(string outputFile)

@@ -37,16 +37,20 @@ public class CLIOption : IParser
 
     private IParser InitParser()
     {
+        List<IParser> choiceList = [StringP($"--{Name}")];
+
+        if (Alias is not null)
+        {
+            choiceList.Add(StringP($"-{Alias}"));
+        }
+
         if (Arg is not null)
         {
             return Choice(
-                Seq(
-                    Choice(StringP($"-{Alias}"), StringP($"--{Name}")),
-                    Optional(Seq(Char(' '), PrintableChar(" ")))
-                )
+                Seq(Choice(choiceList.ToArray()), Optional(Seq(Char(' '), PrintableChar(" "))))
             );
         }
-        return Choice(Seq(Choice(StringP($"-{Alias}"), StringP($"--{Name}"))));
+        return Choice(Seq(Choice(choiceList.ToArray())));
     }
 
     public ParseResult Parse(ParseContext context)

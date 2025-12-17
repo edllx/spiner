@@ -25,6 +25,20 @@ public partial class TestInputs
                 Options = [new CLIOptionToken() { Value = new(7, 14), Key = new(4, 2) }],
             },
         },
+        new object[]
+        {
+            Parser,
+            "run -f ./testFile.xml --debug",
+            new CommandToken()
+            {
+                Name = new(0, 3),
+                Options =
+                [
+                    new CLIOptionToken() { Value = new(7, 14), Key = new(4, 2) },
+                    new CLIOptionToken() { Key = new(22, 7) },
+                ],
+            },
+        },
         // Simple command with 1 option
         new object[]
         {

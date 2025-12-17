@@ -63,7 +63,7 @@
     <Stack>
       <Service name="db" layer="fahrenheit10"/>
 
-      <Service name="api" target="true">
+      <Service name="api" target="true" logEnabled="true">
         <Arg from="db" key="DB_CONNECTION_STRING"/>
       </Service>
     </Stack>
@@ -139,7 +139,7 @@
     <Stack>
       <Service name="db" layer="bothfandc"/>
 
-      <Service name="api" target="true">
+      <Service name="api" target="true" logEnabled="true">
         <Arg from="db" key="DB_CONNECTION_STRING"/>
       </Service>
     </Stack>
@@ -152,12 +152,66 @@
       <Test>
         <Request name="getall"/>
         <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
           <Equals actual="{{response['json']#type}}" expected="array"/>
           <Equals actual="{{response['json']#length}}" expected="20"/>
         </Asserts>
       </Test>
+
+      <Test>
+        <Request name="add">
+          <Arg key="temperature" value="22"/>
+          <Arg key="type" value="Celsius"/>
+        </Request>
+
+        <Response>
+          <Set key="id" value="{{response['json']['id']}}"/>
+        </Response>
+
+        <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="22"/>
+          <NotNull key="id"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="patch">
+          <Arg key="id" value="{{id}}"/>
+          <Arg key="temperature" value="32"/>
+          <Arg key="type" value="Celsius"/>
+        </Request>
+
+        <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="32"/>
+          <Equals actual="{{response['json']['id']}}" expected="{{id}}"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="get">
+          <Arg key="id" value="{{id}}"/>
+        </Request>
+
+        <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="32"/>
+          <Equals actual="{{response['json']['id']}}" expected="{{id}}"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="getall"/>
+        <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
+          <Equals actual="{{response['json']#type}}" expected="array"/>
+          <Equals actual="{{response['json']#length}}" expected="21"/>
+        </Asserts>
+      </Test>
     </Tests>
   </TestSuite>
-
-
 </Spinner>
