@@ -8,7 +8,7 @@ try
 {
     app.Init();
     await app.Start();
-    //Console.WriteLine(app.ToString(0));
+    //Console.WriteLine(KeyManager.Resolve("{{name}}", new Scope([new("name", "ali")])));
 }
 catch (Exception ex)
 {

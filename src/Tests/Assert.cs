@@ -64,6 +64,26 @@ public class TestAssert : Iresovable
     }
 }
 
+public class AssertNotNull : ITestAssert
+{
+    public string Key { get; set; }
+
+    public AssertNotNull(string key)
+    {
+        Key = key;
+    }
+
+    public AssertResult evaluate()
+    {
+        return new() { Success = true };
+    }
+
+    public string ToString(int depth)
+    {
+        return $"{"".PadRight(4 * depth)}<AssertNotNull key=\"{Key}\" />";
+    }
+}
+
 public class AssertEquals : ITestAssert
 {
     public string Exptected { get; set; }

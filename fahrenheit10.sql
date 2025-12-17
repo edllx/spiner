@@ -1,13 +1,13 @@
 \c weddy
 
-INSERT INTO weathers(temperature,type)VALUES
-  (70,'Fahrenheit'),
-  (71,'Fahrenheit'),
-  (72,'Fahrenheit'),
-  (73,'Fahrenheit'),
-  (74,'Fahrenheit'),
-  (75,'Fahrenheit'),
-  (76,'Fahrenheit'),
-  (77,'Fahrenheit'),
-  (78,'Fahrenheit'),
-  (79,'Fahrenheit');
+INSERT INTO weathers(temperature,type,id)VALUES
+  (70,'Fahrenheit','W-id10'),
+  (71,'Fahrenheit','W-id11'),
+  (72,'Fahrenheit','W-id12'),
+  (73,'Fahrenheit','W-id13'),
+  (74,'Fahrenheit','W-id14'),
+  (75,'Fahrenheit','W-id15'),
+  (76,'Fahrenheit','W-id16'),
+  (77,'Fahrenheit','W-id17'),
+  (78,'Fahrenheit','W-id18'),
+  (79,'Fahrenheit','W-id19');

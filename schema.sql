@@ -7,7 +7,9 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'weddy')\gexec
 
 -- Users table
 CREATE TABLE IF NOT EXISTS weathers (
+    id VARCHAR(100) NOT NULL,
     temperature SMALLINT NOT NULL,
     type VARCHAR(20),
-    CONSTRAINT ck_weather_type CHECK (type IN ('Fahrenheit', 'Celsius'))
+    CONSTRAINT ck_weather_type CHECK (type IN ('Fahrenheit', 'Celsius')),
+    CONSTRAINT ck_weather_id PRIMARY KEY (id)
 );

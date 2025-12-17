@@ -25,6 +25,7 @@ public class TaskResultSet : TaskResult
 public abstract class BaseTask
 {
     protected List<Func<Task<TaskResult>>> _tasks = [];
+    public int Count => _tasks.Count;
     public event EventHandler<TaskResultBase>? OnTaskFinished;
 
     public virtual async Task<TaskResultBase> Run()
@@ -56,6 +57,7 @@ public class TaskSequence : BaseTask
     public override async Task<TaskResultBase> Run()
     {
         TaskResultBase result = await Process();
+
         try
         {
             return result;

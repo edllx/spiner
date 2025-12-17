@@ -58,7 +58,7 @@ public class XMLAttributeParser : IParser
         private static IParser Attribute = Seq(
             AlphaChar,
             StringP("=\""),
-            PrintableChar("\""),
+            Choice(PrintableChar("\""), Empty),
             Char('"')
         );
 

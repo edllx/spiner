@@ -66,6 +66,12 @@ public class HandleTestAssertEquals : HandleElementRequest<AssertEquals>
         : base(token, source) { }
 }
 
+public class HandleTestAssertNotNull : HandleElementRequest<AssertEquals>
+{
+    public HandleTestAssertNotNull(IToken token, string source)
+        : base(token, source) { }
+}
+
 public partial class App
 {
     private T? HandleElement<T>(HandleTestSuite request)
@@ -378,6 +384,15 @@ public partial class App
                     }
                     asserts.Add(eq);
                     break;
+                case "NotNull":
+                    var ntn = HandleElement<AssertNotNull>(new(stk, request.Source));
+                    if (ntn is null)
+                    {
+                        return default(T);
+                    }
+                    asserts.Add(ntn);
+
+                    break;
             }
         }
         return (T)(object)new TestAssert(asserts.ToArray());
@@ -407,5 +422,18 @@ public partial class App
         var assetEqActual = token.GetAttribute("actual", request.Source) ?? "";
         var assertEqExpected = token.GetAttribute("expected", request.Source) ?? "";
         return (T)(object)new AssertEquals(assertEqExpected, assetEqActual);
+    }
+
+    private T? HandleElement<T>(HandleTestAssertNotNull request)
+        where T : AssertNotNull
+    {
+        if (request.Token is not SpinnerToken token || token.Name != "NotNull")
+        {
+            return default(T);
+        }
+
+        var key = token.GetAttribute("key", request.Source) ?? "";
+
+        return (T)(object)new AssertNotNull(key);
     }
 }

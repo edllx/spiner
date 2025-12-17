@@ -94,8 +94,13 @@ public class KeyManager
         return resovedValue;
     }
 
-    public static string Resolve(string value, Scope scope)
+    public static string Resolve(string value, Scope? scope)
     {
+        if (scope is null)
+        {
+            return value;
+        }
+
         KeyParser parser = new();
 
         var res = parser.Parse(value);
@@ -120,8 +125,16 @@ public class KeyManager
                     case KeyRefToken t:
 
                         var name = value.AsSpan().Slice(t.Name.Start, t.Name.Length).ToString();
+                        var s = scope;
 
-                        var y = scope.Get(name) ?? "";
+                        var key = "{{" + name + "}}";
+                        var y = s.Get(name) ?? key;
+
+                        while (string.IsNullOrEmpty(y) && s.Parent is not null)
+                        {
+                            y = y = s.Parent.Get(name) ?? key;
+                            s = s.Parent;
+                        }
 
                         buffer.Append(y);
                         break;

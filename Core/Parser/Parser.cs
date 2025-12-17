@@ -165,6 +165,7 @@ public static class Parser
     public static readonly IParser EOF = new EndOfFileParser();
     public static readonly IParser LineBreak = new LineBreakParser();
     public static readonly IParser Any = new AnyParser();
+    public static readonly IParser Empty = new EmptyParser();
     public static readonly IParser CatchAll = new CatchAllParser();
     public static readonly IParser Digit = new DigitParser();
     public static readonly IParser Space = new CharParser(' ');

@@ -44,6 +44,7 @@ public class Test
         }
 
         // Resolve request
+        /*
         if (Request is not null)
         {
             Request.Resolve();
@@ -53,6 +54,7 @@ public class Test
         {
             Asserts.Resolve(Scope);
         }
+        */
     }
 
     public string ToString(int depth = 0)

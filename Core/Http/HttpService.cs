@@ -41,11 +41,6 @@ public class HttpResponse : IDisposable
 
     public JsonResponse JsonFind(string path, Scope scope)
     {
-        if (Document is null)
-        {
-            return new() { Path = path, Value = "" };
-        }
-
         var r = ResponseOperator.Parse(new ParseContext(path));
 
         if (!r.Success)
@@ -60,6 +55,22 @@ public class HttpResponse : IDisposable
 
         var jsonToken = (JsonResponseOperatorToken)r.Token;
         var key = jsonToken.Key.ToString(path);
+
+        if (Document is null)
+        {
+            if (jsonToken.Type == JsonResponseOperatorTokenType.Status)
+            {
+                return new()
+                {
+                    Found = true,
+                    Path = path,
+                    Value = $"{((int)StatusCode)}",
+                    Key = key,
+                    Type = jsonToken.Type,
+                };
+            }
+            return new() { Path = path, Value = path };
+        }
 
         switch (jsonToken.Type)
         {
@@ -79,6 +90,7 @@ public class HttpResponse : IDisposable
                 {
                     Found = true,
                     Path = path,
+                    Value = $"{((int)StatusCode)}",
                     Key = key,
                     Type = jsonToken.Type,
                 };

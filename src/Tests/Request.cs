@@ -37,8 +37,8 @@ public class TestRequest : Iresovable
     public void Resolve(Scope? scope = null)
     {
         var s = scope ?? Scope;
-        Path = KeyManager.Resolve(Path, s);
-        Body?.Resolve(s);
+        //Path = KeyManager.Resolve(Path, s);
+        //Body?.Resolve(s);
     }
 
     public string ToString(int depth = 0)

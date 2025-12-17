@@ -114,7 +114,7 @@ public class SpinnerParser
     private static SpinnerElement AssertNotNull = new("NotNull")
     {
         Mode = ElementMode.SingleLine,
-        IsAttributeAllowed = false,
+        IsAttributeAllowed = true,
     };
 
     private static SpinnerElement AssertEquals = new("Equals")

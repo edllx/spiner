@@ -69,7 +69,7 @@
     </Stack>
 
     <Tests mode="sync">
-      <Key name="id" value="random-id"/>
+      <Key name="id" value=""/>
       <Key name="temperature" value="105"/>
       <Key name="type" value="Celsius"/>
 
@@ -80,6 +80,58 @@
           <Equals actual="{{response['json']#length}}" expected="10"/>
         </Asserts>
       </Test>
+      <Test>
+        <Request name="add">
+          <Arg key="temperature" value="{{temperature}}"/>
+          <Arg key="type" value="{{type}}"/>
+        </Request>
+
+        <Response>
+          <Set key="id" value="{{response['json']['id']}}"/>
+        </Response>
+
+        <Asserts>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}"/>
+          <NotNull key="id"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="getall"/>
+        <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
+          <Equals actual="{{response['json']#type}}" expected="array"/>
+          <Equals actual="{{response['json']#length}}" expected="11"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="get">
+          <Arg key="id" value="{{id}}"/>
+        </Request>
+
+        <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['id']}}" expected="{{id}}"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="get">
+          <Arg key="id" value="W-id14"/>
+        </Request>
+
+        <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['id']}}" expected="W-id14"/>
+        </Asserts>
+      </Test>
+
+
     </Tests>
   </TestSuite>
 
@@ -93,7 +145,7 @@
     </Stack>
 
     <Tests mode="sync">
-      <Key name="id" value="random-id"/>
+      <Key name="id" value=""/>
       <Key name="temperature" value="105"/>
       <Key name="type" value="Celsius"/>
 
