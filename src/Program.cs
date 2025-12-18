@@ -7,11 +7,15 @@ var podman = new PodmanService();
 
 try
 {
-    bool ready = app.Init();
+    CLICommandOutput ready = app.Init();
 
-    if (ready)
+    if (ready.Success)
     {
         await app.Start();
+    }
+    else
+    {
+        Console.WriteLine(ready.Message);
     }
 }
 catch (Exception ex)

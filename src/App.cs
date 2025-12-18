@@ -15,6 +15,20 @@ public abstract class HandleElementRequest<T>
     public string Source { get; init; }
 }
 
+public class CLICommandOutput
+{
+    public CLICommandOutput(bool success, Exception? exception, string message)
+    {
+        Success = success;
+        Exception = exception;
+        Message = message;
+    }
+
+    public bool Success { get; init; }
+    public Exception? Exception { get; init; }
+    public string Message { get; init; } = "";
+}
+
 public partial class App : IDisposable
 {
     public string Args { get; } = "";
@@ -93,7 +107,7 @@ public partial class App : IDisposable
         _testsBatch = new();
     }
 
-    public bool Init()
+    public CLICommandOutput Init()
     {
         try
         {
@@ -110,24 +124,25 @@ public partial class App : IDisposable
                 throw new MissingCommandArgument("input file");
             }
         }
-        catch (MissingCommandArgument)
+        catch (MissingCommandArgument ex)
         {
-            Console.WriteLine($"Missing input file\n\n{CLIArgParser.Help(string.Join(" ", Path))}");
-            return false;
+            return new(
+                false,
+                ex,
+                $"Missing input file\n\n{CLIArgParser.Help(string.Join(" ", Path))}"
+            );
         }
-        catch (UnknownCommandExeption)
+        catch (UnknownCommandExeption ex)
         {
-            Console.WriteLine(CLIArgParser.Help(string.Join(" ", Path)));
-            return false;
+            return new(false, ex, CLIArgParser.Help(string.Join(" ", Path)));
         }
-        catch (System.Exception)
+        catch (System.Exception ex)
         {
-            Console.WriteLine(CLIArgParser.Help(string.Join(" ", Path)));
-            return false;
+            return new(false, ex, CLIArgParser.Help(string.Join(" ", Path)));
         }
 
         Execute();
-        return true;
+        return new(true, null, "");
     }
 
     public async Task Start()

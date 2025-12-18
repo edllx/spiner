@@ -574,7 +574,7 @@ public partial class TestInputs
                     Found = true,
                     Path = "{{response['status']}}",
                     Key = "response['status']",
-                    Value = "",
+                    Value = "0",
                     Type = JsonResponseOperatorTokenType.Status,
                 },
             },

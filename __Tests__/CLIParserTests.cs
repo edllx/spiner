@@ -17,20 +17,17 @@ public class CLIParserTests
         Assert.True(res.Success, "Parsing failed");
         var expected = token.ToString(args);
         var actual = res.ToString(args);
-        Assert.True(expected == actual, $"{args}\n\nExpected:\n{expected}\n\nActual:\n{actual}\n");
+        Assert.True(expected == actual, $"{args}\n{Tools.StingDiff(expected, actual)}");
     }
 
     [Theory]
     [MemberData(nameof(TestAppThrows))]
     public void AppCreation(string args, Exception ex)
     {
-        Assert.Throws(
-            ex.GetType(),
-            () =>
-            {
-                var app = new App(args);
-                app.Init();
-            }
-        );
+        var app = new App(args);
+        CLICommandOutput res = app.Init();
+
+        Assert.False(res.Success);
+        Assert.IsType(ex.GetType(), res.Exception);
     }
 }
