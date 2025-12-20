@@ -1,4 +1,5 @@
 using System.Text;
+using Spectre.Console;
 
 namespace spinner;
 
@@ -33,6 +34,16 @@ public struct LogMessage
 
     public override string ToString()
     {
+        switch (LogLevel)
+        {
+            case LogLevel.Critial:
+                return AnsiColors.Colorize($"[{LogLevel}]: {Message}", AnsiColors.Red);
+
+            case LogLevel.Error:
+                return AnsiColors.Colorize($"[{LogLevel}]: {Message}", AnsiColors.Error);
+            case LogLevel.Warning:
+                return AnsiColors.Colorize($"[{LogLevel}]: {Message}", AnsiColors.Yellow);
+        }
         return $"[{LogLevel}]: {Message}";
     }
 }
@@ -63,7 +74,7 @@ public class Logger
 
         if (Output.HasFlag(LoggerOutput.Stdout))
         {
-            Console.WriteLine(message.ToString());
+            AnsiConsole.WriteLine(message.ToString());
         }
 
         if (OnMessageReceived is null)

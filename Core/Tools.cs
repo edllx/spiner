@@ -175,10 +175,14 @@ public static class AnsiColors
 {
     public const string Reset = "\u001b[0m";
     public const string Black = "\u001b[30m";
-    public const string Red = "\u001b[31m";
-    public const string Green = "\u001b[32m";
-    public const string Yellow = "\u001b[33m";
-    public const string Blue = "\u001b[34m";
+
+    public const string Red = "\x1b[38;2;255;0;0m";
+    public const string Green = "\x1b[38;2;0;255;0m";
+    public const string Blue = "\x1b[38;2;0;0;255m";
+
+    public const string Error = "\x1b[38;2;255;51;51m";
+
+    public const string Yellow = "\x1b[38;2;255;255;0m";
     public const string Magenta = "\u001b[35m";
     public const string Cyan = "\u001b[36m";
     public const string White = "\u001b[37m";

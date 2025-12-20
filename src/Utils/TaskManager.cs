@@ -8,6 +8,7 @@ public interface ITask
 public abstract class TaskResultBase
 {
     public bool Success = true;
+    public string Tag = "";
 }
 
 public class TaskArgs { }
@@ -22,11 +23,19 @@ public class TaskResultSet : TaskResult
     public TaskResult[] Results = [];
 }
 
-public abstract class BaseTask
+public abstract class BaseTask : IDisposable
 {
     protected List<Func<Task<TaskResult>>> _tasks = [];
     public int Count => _tasks.Count;
-    public event EventHandler<TaskResultBase>? OnTaskFinished;
+    public string Tag = "";
+    public event Action<TaskResultBase>? OnTaskDone;
+
+    public BaseTask() { }
+
+    public BaseTask(Action<TaskResultBase> callback)
+    {
+        OnTaskDone += callback;
+    }
 
     public virtual async Task<TaskResultBase> Run()
     {
@@ -48,12 +57,34 @@ public abstract class BaseTask
 
     protected void NotifyTaskDone(TaskResultBase result)
     {
-        OnTaskFinished?.Invoke(this, result);
+        result.Tag = Tag;
+        OnTaskDone?.Invoke(result);
+        Dispose();
+    }
+
+    public void Dispose()
+    {
+        if (OnTaskDone is null)
+        {
+            return;
+        }
+        var invo = OnTaskDone.GetInvocationList();
+
+        foreach (var item in invo)
+        {
+            OnTaskDone -= (Action<TaskResultBase>)item;
+        }
     }
 }
 
 public class TaskSequence : BaseTask
 {
+    public TaskSequence()
+        : base() { }
+
+    public TaskSequence(Action<TaskResultBase> callback)
+        : base(callback) { }
+
     public override async Task<TaskResultBase> Run()
     {
         TaskResultBase result = await Process();
@@ -101,6 +132,12 @@ public class TaskSequence : BaseTask
 
 public class TaskBatch : BaseTask
 {
+    public TaskBatch()
+        : base() { }
+
+    public TaskBatch(Action<TaskResultBase> callback)
+        : base(callback) { }
+
     private async Task<TaskResultSet> Process()
     {
         try

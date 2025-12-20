@@ -5,10 +5,21 @@ namespace spinner;
 
 public class UnknownOptionExeption(string option) : Exception($"Unknown Option [{option}]") { }
 
-public class UnknownCommandExeption(string command) : Exception($"Unknown command [{command}]") { }
+public class UnknownCommandExeption(string command) : Exception($"Unknown command [{command}]")
+{
+    public string Command = command;
+}
 
 public class MissingOptionArgument(string option)
-    : Exception($"Missing Option argument [{option} <path>]") { }
+    : Exception($"Missing Option argument [{option} <path>]")
+{
+    public string Option = option;
+}
+
+public class ShowHelpExeption(string command) : Exception(command)
+{
+    public string Command = command;
+}
 
 public class MissingCommandArgument(string command) : Exception(command) { }
 

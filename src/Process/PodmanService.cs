@@ -46,6 +46,22 @@ public partial class PodmanService
         }
     }
 
+    public async Task ImagePune()
+    {
+        CancellationToken tk = new();
+        var command = $"image prune";
+
+        var result = await Run(command, tk, prompt: "y");
+
+        switch (result.ExitCode)
+        {
+            case 0:
+                break;
+            default:
+                throw new Exception(result.StdErr);
+        }
+    }
+
     public async Task BuildImageAsync(
         string buildFilePath,
         string context,
@@ -54,7 +70,7 @@ public partial class PodmanService
     )
     {
         CancellationToken tk = token ?? new();
-        var command = $"build --force-rm -t {tag} -f {buildFilePath} {context}";
+        var command = $"build --force-rm --rm -t {tag} -f {buildFilePath} {context}";
 
         var result = await Run(command, tk);
 
