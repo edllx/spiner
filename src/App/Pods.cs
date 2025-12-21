@@ -1,13 +1,103 @@
+using System.Text;
 using Spectre.Console;
+using Spectre.Console.Rendering;
 
 namespace spinner;
 
+public enum AssertResutState
+{
+    Skipped,
+    Success,
+    Failed,
+}
+
+public abstract class TestResult
+{
+    public string Name;
+
+    public TestResult(string name)
+    {
+        Name = name;
+    }
+
+    public virtual Spectre.Console.Rendering.IRenderable Format()
+    {
+        return new Markup(Name);
+    }
+}
+
+public class TestResultTree : TestResult
+{
+    public List<TestResult> Branches { get; init; } = [];
+
+    public TestResultTree(string name, List<TestResult> branches)
+        : base(name)
+    {
+        Branches = branches;
+    }
+
+    public override IRenderable Format()
+    {
+        Tree res = new(Name);
+
+        for (int i = 0; i < Branches.Count; i++)
+        {
+            res.AddNode(Branches[i].Format());
+        }
+
+        return res;
+    }
+}
+
+public class TestResultLeaf : TestResult
+{
+    public bool Success { get; init; } = false;
+    public string Message { get; init; }
+
+    public TestResultLeaf(string name, bool success, string message = "")
+        : base(name)
+    {
+        Success = success;
+        Message = message;
+    }
+
+    public override IRenderable Format()
+    {
+        StringBuilder builder = new();
+
+        if (Success)
+        {
+            builder.Append($"{Emoji.Known.CheckMarkButton} {Name}");
+            return new Markup(builder.ToString());
+        }
+        else
+        {
+            builder.Append($"{Emoji.Known.CrossMark} {Name}");
+
+            if (!string.IsNullOrEmpty(Message))
+            {
+                builder.Append($"\n{Message}");
+            }
+
+            return new Markup($"{builder.ToString()}");
+        }
+    }
+}
+
 public partial class App
 {
-    private void AddTestPods(TaskBatch podBatch)
+    private TestResult AddTestPods(TaskBatch podBatch)
     {
+        List<TestResult> results = [];
+        TestResultTree root = new("Tests", branches: results);
+        int i = 1;
+
         foreach (TestSuite suite in TestManager.Tests)
         {
+            List<TestResult> suites = [];
+            TestResultTree testSuite = new($"TestSuit-{i++}", branches: suites);
+            results.Add(testSuite);
+
             foreach (Tests tests in suite.TestSet)
             {
                 TaskSequence testsSequence = new();
@@ -34,7 +124,7 @@ public partial class App
                         await serviceBatch.Run();
                         Logger.Log($"Pod {podName} Ready", LogLevel.Info);
 
-                        BaseTask testRuns = CreateTests(tests, port);
+                        BaseTask testRuns = CreateTests(tests, port, testSuite);
                         await testRuns.Run();
                         foreach (string sName in serviceTolog)
                         {
@@ -59,6 +149,7 @@ public partial class App
                 });
             }
         }
+        return root;
     }
 
     private void AddPodCleanupTask(BaseTask sequence, string podName)
@@ -77,18 +168,6 @@ public partial class App
             service.Name.Length + 16,
             $"sp-{service.Name}-"
         );
-
-        /*
-        if (Debug && service.LogEnabled)
-        {
-            _testsLogs.Add(async () =>
-            {
-                string logs = await _podman.GetContainerLogs(containerName);
-                Logger.Log($"Logs:{containerName}\n{logs}", LogLevel.Debug);
-                return new();
-            });
-        }
-        */
 
         sequence.Add(async () =>
         {

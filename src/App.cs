@@ -48,6 +48,7 @@ public partial class App : IDisposable
 
     public event Action<TaskResultBase>? OnTaskDone;
     public readonly Dictionary<string, int> PortMapping = [];
+    public TestResult? Results { get; private set; }
 
     public App(string args)
     {
@@ -78,7 +79,7 @@ public partial class App : IDisposable
     {
         TaskBatch testRuns = new() { Tag = "TestRuns" };
         testRuns.OnTaskDone += NotifyTaskDone;
-        AddTestPods(testRuns);
+        Results = AddTestPods(testRuns);
 
         await _taskManager.ScheduleTask(testRuns);
     }
@@ -105,5 +106,8 @@ public partial class App : IDisposable
         );
     }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+        _taskManager.Dispose();
+    }
 }

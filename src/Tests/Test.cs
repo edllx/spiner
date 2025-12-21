@@ -7,6 +7,7 @@ public class Test
     public TestRequest? Request { get; init; }
     public TestResponse? Response { get; init; }
     public TestAssert? Asserts { get; init; }
+    public string Description { get; init; }
     public Scope Scope { get; init; }
 
     public Test()
@@ -15,18 +16,21 @@ public class Test
         Scope = new();
         Asserts = null;
         Response = null;
+        Description = "";
     }
 
     public Test(
         TestRequest? request = null,
         TestResponse? response = null,
         Scope? scope = null,
-        TestAssert? asserts = null
+        TestAssert? asserts = null,
+        string description = ""
     )
     {
         Request = request;
         Scope = scope ?? new();
         Asserts = asserts;
+        Description = description;
         Response = response;
     }
 
@@ -42,19 +46,6 @@ public class Test
                 key.Set(val);
             }
         }
-
-        // Resolve request
-        /*
-        if (Request is not null)
-        {
-            Request.Resolve();
-        }
-
-        if (Asserts is not null)
-        {
-            Asserts.Resolve(Scope);
-        }
-        */
     }
 
     public string ToString(int depth = 0)

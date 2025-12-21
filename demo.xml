@@ -119,7 +119,7 @@
         </Asserts>
       </Test>
 
-      <Test>
+      <Test description="Get with resolved value">
         <Request name="get">
           <Arg key="id" value="W-id14"/>
         </Request>
@@ -179,14 +179,14 @@
       <Test>
         <Request name="patch">
           <Arg key="id" value="{{id}}"/>
-          <Arg key="temperature" value="32"/>
+          <Arg key="temperature" value="35"/>
           <Arg key="type" value="Celsius"/>
         </Request>
 
         <Asserts>
           <Equals actual="{{response['status']}}" expected="200"/>
           <Equals actual="{{response['json']#type}}" expected="object"/>
-          <Equals actual="{{response['json']['temperatureC']}}" expected="32"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="35"/>
           <Equals actual="{{response['json']['id']}}" expected="{{id}}"/>
         </Asserts>
       </Test>
@@ -199,7 +199,7 @@
         <Asserts>
           <Equals actual="{{response['status']}}" expected="200"/>
           <Equals actual="{{response['json']#type}}" expected="object"/>
-          <Equals actual="{{response['json']['temperatureC']}}" expected="32"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="35"/>
           <Equals actual="{{response['json']['id']}}" expected="{{id}}"/>
         </Asserts>
       </Test>

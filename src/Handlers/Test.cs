@@ -242,6 +242,8 @@ public partial class App
         TestAssert? testAssert = null;
         TestResponse? testResponse = null;
 
+        string description = token.GetAttribute("description", request.Source) ?? "";
+
         for (int i = 0; i < token.Children.Length; i++)
         {
             if (token.Children[i] is not SpinnerToken stk)
@@ -277,7 +279,8 @@ public partial class App
                     request: testRequest,
                     asserts: testAssert,
                     response: testResponse,
-                    scope: testScope
+                    scope: testScope,
+                    description: description
                 );
     }
 

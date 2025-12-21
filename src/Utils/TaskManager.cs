@@ -165,11 +165,16 @@ public class TaskBatch : BaseTask
     }
 }
 
-public class TaskManager
+public class TaskManager : IDisposable
 {
     OwnedSemaphore _taskLock = new(1, 1);
     CancellationTokenSource _tokenSource = new(TimeSpan.FromMinutes(10));
     Queue<BaseTask> _taskList = [];
+
+    public void Dispose()
+    {
+        Stop();
+    }
 
     public async Task ScheduleTask(BaseTask task)
     {
@@ -204,7 +209,7 @@ public class TaskManager
                 _taskLock.Release(randomId);
             }
 
-            await Task.Delay(5000);
+            await Task.Delay(1000);
         }
     }
 

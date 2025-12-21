@@ -140,7 +140,7 @@ public class SpinnerParser
     private static SpinnerElement Test = new("Test")
     {
         Mode = ElementMode.MultiLine,
-        IsAttributeAllowed = false,
+        IsAttributeAllowed = true,
         AllowedChildElements = [SpinnerKey, TestRequest, TestResponse, Asserts],
     };
 

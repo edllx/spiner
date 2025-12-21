@@ -1,8 +1,11 @@
+using System.Text;
+using Spectre.Console;
+
 namespace spinner;
 
 public partial class App
 {
-    private BaseTask CreateTests(Tests tests, int port)
+    private BaseTask CreateTests(Tests tests, int port, TestResultTree tree)
     {
         switch (tests.Mode)
         {
@@ -10,7 +13,7 @@ public partial class App
                 TaskSequence sequence = new();
                 for (int i = 0; i < tests.TestSet.Length; i++)
                 {
-                    var f = HandleRequest(port, tests.TestSet[i], this);
+                    var f = HandleRequest(port, tests.TestSet[i], tree);
                     sequence.Add(f);
                 }
 
@@ -20,14 +23,14 @@ public partial class App
                 TaskBatch batch = new();
                 for (int i = 0; i < tests.TestSet.Length; i++)
                 {
-                    var f = HandleRequest(port, tests.TestSet[i], this);
+                    var f = HandleRequest(port, tests.TestSet[i], tree);
                     batch.Add(f);
                 }
                 return batch;
         }
     }
 
-    private static Func<Task<TaskResult>> HandleRequest(int port, Test test, App app)
+    private Func<Task<TaskResult>> HandleRequest(int port, Test test, TestResultTree tree)
     {
         return async () =>
         {
@@ -47,36 +50,42 @@ public partial class App
             var path = test.Request?.Path ?? "";
             var body = test.Request?.Body?.Model();
             var id = Tools.GenerateRandomString(12, "Test-");
+            string description = test.Description;
+
+            if (string.IsNullOrEmpty(description))
+            {
+                description = id;
+            }
 
             var resolvedPath = KeyManager.Resolve(path, test.Scope);
 
             HttpResponse? response = null;
             try
             {
-                app.Logger.Log($"{id}:{method}: localhost:{port}/{resolvedPath}");
+                Logger.Log($"{description} :{method}: localhost:{port}/{resolvedPath}");
                 switch (method)
                 {
                     case "POST":
-                        if (app.Debug && test.Request is not null && test.Request.Body is not null)
+                        if (Debug && test.Request is not null && test.Request.Body is not null)
                         {
-                            app.Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
+                            Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
                         }
 
                         response = await contex.Post(resolvedPath, body);
                         break;
 
                     case "PATCH":
-                        if (app.Debug && test.Request is not null && test.Request.Body is not null)
+                        if (Debug && test.Request is not null && test.Request.Body is not null)
                         {
-                            app.Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
+                            Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
                         }
                         response = await contex.Patch(resolvedPath, body);
                         break;
 
                     case "PUT":
-                        if (app.Debug && test.Request is not null && test.Request.Body is not null)
+                        if (Debug && test.Request is not null && test.Request.Body is not null)
                         {
-                            app.Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
+                            Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
                         }
                         response = await contex.Put(resolvedPath, body);
                         break;
@@ -94,8 +103,8 @@ public partial class App
                         var valueR = response.JsonFind(item.Value, test.Scope);
                         if (!valueR.Found)
                         {
-                            app.Logger.Log(
-                                $"{id}:Set: Did not found a value for {item.Value}",
+                            Logger.Log(
+                                $"{description} :Set: Did not found a value for {item.Value}",
                                 LogLevel.Warning
                             );
                         }
@@ -105,10 +114,19 @@ public partial class App
                         }
                     }
 
-                    foreach (var item in test.Asserts?.Asserts ?? [])
+                    if (test.Asserts is null || test.Asserts.Asserts is null)
                     {
-                        bool result = false;
-                        switch (item)
+                        return new();
+                    }
+
+                    bool result = false;
+
+                    for (int i = 0; i < test.Asserts!.Asserts!.Length; i++)
+                    {
+                        var t = test.Asserts.Asserts[i];
+                        StringBuilder b = new();
+
+                        switch (t)
                         {
                             case AssertEquals eq:
                                 var eqq = new AssertEquals(
@@ -117,29 +135,74 @@ public partial class App
                                 );
                                 result = eqq.evaluate().Success;
 
-                                app.Logger.Log(
-                                    $"{id}:Assert: {eq.Actual} == {eq.Exptected} {(result ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)} Found: {eqq.Actual}")}"
+                                Logger.Log(
+                                    $"{description}:Assert: {eq.Actual} == {eq.Exptected} {(result ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)} Found: {eqq.Actual}")}"
                                 );
+
+                                if (!result)
+                                {
+                                    if (
+                                        test.Asserts is not null
+                                        && test.Asserts.Asserts is not null
+                                    )
+                                    {
+                                        b.Append(
+                                            $"[red]Failed {eqq.ToString(0).EscapeMarkup()}[/]"
+                                        );
+                                    }
+                                }
 
                                 break;
                             case AssertNotNull ntn:
                                 var ntnValue = test.Scope.Get(ntn.Key);
                                 var isEmpty = string.IsNullOrEmpty(ntnValue);
 
-                                app.Logger.Log(
-                                    $"{id}:Assert: {ntn.Key} NOT NULL {(!isEmpty ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)} Found: {ntnValue}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)}")}"
+                                result = !isEmpty;
+
+                                Logger.Log(
+                                    $"{description}:Assert: {ntn.Key} NOT NULL {(!isEmpty ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)} Found: {ntnValue}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)}")}"
                                 );
+
+                                if (!result)
+                                {
+                                    if (
+                                        test.Asserts is not null
+                                        && test.Asserts.Asserts is not null
+                                    )
+                                    {
+                                        b.Append(
+                                            $"[red]Failed {ntn.ToString(0).EscapeMarkup()}[/]"
+                                        );
+                                    }
+                                }
 
                                 break;
                             default:
                                 break;
+                        }
+
+                        if (!result)
+                        {
+                            if (test.Request is not null)
+                            {
+                                b.Append($"\n[gray]{test.Request?.ToString(0).EscapeMarkup()}[/]");
+                            }
+
+                            tree.Branches.Add(
+                                new TestResultLeaf(
+                                    $"{description}:{method}:/{path}",
+                                    false,
+                                    b.ToString()
+                                )
+                            );
+                            return new() { Success = false };
                         }
                     }
                 }
             }
             catch (System.Exception ex)
             {
-                app.Logger.Log($"Something failed: {ex.Message}");
+                Logger.Log($"Something failed: {ex.Message}");
             }
             finally
             {
@@ -148,6 +211,8 @@ public partial class App
                     response.Dispose();
                 }
             }
+
+            tree.Branches.Add(new TestResultLeaf($"{description}:{method}:/{path}", true));
             return new();
         };
     }
