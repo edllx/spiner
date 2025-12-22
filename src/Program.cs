@@ -7,6 +7,7 @@ bool imageBuilt = false;
 bool testsDone = false;
 
 AnsiConsole.Write(new FigletText("Spinner").LeftJustified().Color(Color.Blue));
+AnsiConsole.WriteLine("");
 
 // Parse CLI command
 // Parse input file
@@ -78,4 +79,6 @@ if (app.Results is null)
 {
     return;
 }
+
+AnsiConsole.WriteLine("");
 AnsiConsole.Write(app.Results.Format() ?? new Markup(""));

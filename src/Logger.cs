@@ -54,6 +54,7 @@ public class Logger
     public string OutputFile { get; init; }
     public event EventHandler<LogMessage>? OnMessageReceived;
     private OwnedSemaphore _lock = new(1, 1);
+    public bool Debug { get; set; } = false;
 
     public Logger()
     {
@@ -67,6 +68,11 @@ public class Logger
 
     private void Register(LogMessage message, object source)
     {
+        if (message.LogLevel == LogLevel.Debug && !Debug)
+        {
+            return;
+        }
+
         if (Output.HasFlag(LoggerOutput.File))
         {
             _ = WriteToFile(message);

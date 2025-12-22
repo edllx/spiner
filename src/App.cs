@@ -35,7 +35,6 @@ public partial class App : IDisposable
     private List<string> Path = [];
 
     public bool Done { get; set; } = false;
-    public bool Debug { get; private set; } = false;
     public bool ImageRebuild { get; private set; } = true;
 
     private readonly TaskManager _taskManager = new();

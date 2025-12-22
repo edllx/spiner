@@ -16,7 +16,7 @@ public class HttpContextOptions
 
 public class HttpResponse : IDisposable
 {
-    public JsonDocument? Document { private get; init; }
+    public JsonDocument? Document { get; init; }
     public String? Content { get; init; }
     public HttpStatusCode StatusCode { get; init; }
 

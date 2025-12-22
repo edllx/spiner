@@ -5,16 +5,23 @@ namespace spinner;
 public class Tests
 {
     public static string DefaultMode { get; } = "sync";
+    public string Description { get; init; }
     public Test[] TestSet { get; init; }
     public Scope Scope { get; init; }
     public string Mode { get; init; }
     public string Id { get; } = Tools.GenerateRandomString(20, "testset-");
 
-    public Tests(Test[]? testSet = null, string? mode = null, Scope? scope = null)
+    public Tests(
+        Test[]? testSet = null,
+        string? mode = null,
+        Scope? scope = null,
+        string description = ""
+    )
     {
         TestSet = testSet ?? [];
         Mode = mode ?? "sync";
         Scope = scope ?? new();
+        Description = description;
     }
 
     public Tests()
@@ -22,6 +29,7 @@ public class Tests
         TestSet = [];
         Mode = DefaultMode;
         Scope = new();
+        Description = "";
     }
 
     public string ToString(int depth = 0)

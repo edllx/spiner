@@ -154,7 +154,7 @@ public class SpinnerParser
     public static SpinnerElement TestSuite = new("TestSuite")
     {
         Mode = ElementMode.MultiLine,
-        IsAttributeAllowed = false,
+        IsAttributeAllowed = true,
         AllowedChildElements = [TestStack, Tests],
     };
 

@@ -59,7 +59,7 @@
     </Request>
   </Requests>
 
-  <TestSuite>
+  <TestSuite description="Simple tests">
     <Stack>
       <Service name="db" layer="fahrenheit10"/>
 
@@ -68,7 +68,7 @@
       </Service>
     </Stack>
 
-    <Tests mode="sync">
+    <Tests mode="sync" description="First set">
       <Key name="id" value=""/>
       <Key name="temperature" value="105"/>
       <Key name="type" value="Celsius"/>
@@ -91,9 +91,9 @@
         </Response>
 
         <Asserts>
+          <NotNull key="id"/>
           <Equals actual="{{response['json']#type}}" expected="object"/>
           <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}"/>
-          <NotNull key="id"/>
         </Asserts>
       </Test>
 
@@ -130,12 +130,60 @@
           <Equals actual="{{response['json']['id']}}" expected="W-id14"/>
         </Asserts>
       </Test>
+    </Tests>
 
+    <Tests description="Second set">
+      <Key name="id" value=""/>
+      <Key name="temperature" value="105"/>
+      <Key name="type" value="Celsius"/>
+
+      <Test>
+        <Request name="add">
+          <Arg key="temperature" value="{{temperature}}"/>
+          <Arg key="type" value="{{type}}"/>
+        </Request>
+
+        <Response>
+          <Set key="id" value="{{response['json']['id']}}"/>
+        </Response>
+
+        <Asserts>
+          <NotNull key="id"/>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="get">
+          <Arg key="id" value="{{id}}"/>
+        </Request>
+
+        <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['id']}}" expected="{{id}}"/>
+          <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}"/>
+        </Asserts>
+      </Test>
+
+      <Test description="Get with id from args">
+        <Request name="get">
+          <Arg key="id" value="W-id14"/>
+        </Request>
+
+        <Asserts>
+          <Equals actual="{{response['status']}}" expected="200"/>
+          <Equals actual="{{response['json']#type}}" expected="object"/>
+          <Equals actual="{{response['json']['id']}}" expected="W-id14"/>
+        </Asserts>
+      </Test>
 
     </Tests>
+
   </TestSuite>
 
-  <TestSuite>
+  <TestSuite description="Beter tests">
     <Stack>
       <Service name="db" layer="bothfandc"/>
 

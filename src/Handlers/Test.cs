@@ -82,6 +82,8 @@ public partial class App
             return default(T);
         }
 
+        string description = token.GetAttribute("description", request.Source) ?? "";
+
         List<Tests> testSet = [];
         Stack? stack = null;
         for (int i = 0; i < token.Children.Length; i++)
@@ -115,7 +117,9 @@ public partial class App
             return default(T);
         }
 
-        return (T)(object)new TestSuite(tests: testSet.ToArray(), testStack: stack);
+        return (T)
+            (object)
+                new TestSuite(tests: testSet.ToArray(), testStack: stack, description: description);
     }
 
     private T? HandleElement<T>(HandleStack request)
@@ -168,6 +172,8 @@ public partial class App
             return default(T);
         }
 
+        string description = token.GetAttribute("description", request.Source) ?? "";
+
         var mode = token.GetAttribute("mode", request.Source) ?? Tests.DefaultMode;
         List<Key> testsKeys = HandleElement<List<Key>>(new(token, request.Source)) ?? [];
         List<Test> testsTests = HandleElement<List<Test>>(new(token, request.Source)) ?? [];
@@ -178,7 +184,14 @@ public partial class App
             testsTests[i].Resolve();
         }
 
-        return (T)(object)new Tests(testSet: testsTests.ToArray(), mode: mode, scope: testsScope);
+        return (T)
+            (object)
+                new Tests(
+                    testSet: testsTests.ToArray(),
+                    mode: mode,
+                    scope: testsScope,
+                    description: description
+                );
     }
 
     private T? HandleElement<T>(HandleTestSet request)

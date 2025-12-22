@@ -181,6 +181,7 @@ public static class AnsiColors
     public const string Blue = "\x1b[38;2;0;0;255m";
 
     public const string Error = "\x1b[38;2;255;51;51m";
+    public const string Info = "\x1b[38;2;80;80;255m";
 
     public const string Yellow = "\x1b[38;2;255;255;0m";
     public const string Magenta = "\u001b[35m";

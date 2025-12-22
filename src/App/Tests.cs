@@ -1,5 +1,6 @@
 using System.Text;
 using Spectre.Console;
+using Spectre.Console.Json;
 
 namespace spinner;
 
@@ -62,11 +63,13 @@ public partial class App
             HttpResponse? response = null;
             try
             {
-                Logger.Log($"{description} :{method}: localhost:{port}/{resolvedPath}");
+                Logger.Log(
+                    $"{description} :{AnsiColors.Colorize($"{method}: /{resolvedPath}", AnsiColors.Info)}"
+                );
                 switch (method)
                 {
                     case "POST":
-                        if (Debug && test.Request is not null && test.Request.Body is not null)
+                        if (test.Request is not null && test.Request.Body is not null)
                         {
                             Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
                         }
@@ -75,7 +78,7 @@ public partial class App
                         break;
 
                     case "PATCH":
-                        if (Debug && test.Request is not null && test.Request.Body is not null)
+                        if (test.Request is not null && test.Request.Body is not null)
                         {
                             Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
                         }
@@ -83,7 +86,7 @@ public partial class App
                         break;
 
                     case "PUT":
-                        if (Debug && test.Request is not null && test.Request.Body is not null)
+                        if (test.Request is not null && test.Request.Body is not null)
                         {
                             Logger.Log($"\n{test.Request.Body.ToString(0)}", LogLevel.Debug);
                         }
@@ -136,7 +139,8 @@ public partial class App
                                 result = eqq.evaluate().Success;
 
                                 Logger.Log(
-                                    $"{description}:Assert: {eq.Actual} == {eq.Exptected} {(result ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)} Found: {eqq.Actual}")}"
+                                    $"{description}:Assert: {eq.Actual} == {eq.Exptected} {(result ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)} Found: {eqq.Actual}")}",
+                                    LogLevel.Debug
                                 );
 
                                 if (!result)
@@ -160,7 +164,8 @@ public partial class App
                                 result = !isEmpty;
 
                                 Logger.Log(
-                                    $"{description}:Assert: {ntn.Key} NOT NULL {(!isEmpty ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)} Found: {ntnValue}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)}")}"
+                                    $"{description}:Assert: {ntn.Key} NOT NULL {(!isEmpty ? $"{AnsiColors.Colorize("Success", AnsiColors.Green)} Found: {ntnValue}" : $"{AnsiColors.Colorize("Failed", AnsiColors.Red)}")}",
+                                    LogLevel.Debug
                                 );
 
                                 if (!result)
@@ -185,15 +190,28 @@ public partial class App
                         {
                             if (test.Request is not null)
                             {
-                                b.Append($"\n[gray]{test.Request?.ToString(0).EscapeMarkup()}[/]");
+                                b.Append(
+                                    $"\n[purple]{test.Request?.ToString(0).EscapeMarkup()}[/]"
+                                );
                             }
 
+                            if (test.Scope.Parent is not null)
+                            {
+                                b.Append(
+                                    $"\n[blue]{test.Scope.Combine(test.Scope.Parent).ToString(0).EscapeMarkup()}[/]"
+                                );
+                            }
+
+                            var json = response.Document?.RootElement.ToString() ?? "{}";
+                            var jsonText = new JsonText(json);
+
+                            var p1 = new Markup(
+                                $"{b.ToString()}\nResponse:\n{response.StatusCode}\n"
+                            );
+                            var p2 = new Panel(jsonText).NoBorder();
+
                             tree.Branches.Add(
-                                new TestResultLeaf(
-                                    $"{description}:{method}:/{path}",
-                                    false,
-                                    b.ToString()
-                                )
+                                new TestResultLeaf($"{description}", false, new Rows(p1, p2))
                             );
                             return new() { Success = false };
                         }
@@ -212,7 +230,7 @@ public partial class App
                 }
             }
 
-            tree.Branches.Add(new TestResultLeaf($"{description}:{method}:/{path}", true));
+            tree.Branches.Add(new TestResultLeaf($"{description}", true));
             return new();
         };
     }

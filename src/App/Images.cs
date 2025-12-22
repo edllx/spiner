@@ -38,13 +38,10 @@ public partial class App
                     bool imageExist = await _podman.ImageExist(template.ImageName);
                     if (imageExist && !ImageRebuild)
                     {
-                        if (Debug)
-                        {
-                            Logger.Log(
-                                $"Image {template.ImageName} exist and image-rebuid disabled",
-                                logLevel: LogLevel.Debug
-                            );
-                        }
+                        Logger.Log(
+                            $"Image {template.ImageName} exist and image-rebuid disabled",
+                            logLevel: LogLevel.Debug
+                        );
 
                         return new();
                     }

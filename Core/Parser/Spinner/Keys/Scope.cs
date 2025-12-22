@@ -43,6 +43,32 @@ public class Scope : Iresovable
         return new(this);
     }
 
+    public Scope Combine(Scope scope)
+    {
+        var res = new Scope();
+        foreach (var key in Keys)
+        {
+            if (string.IsNullOrEmpty(key.Value))
+            {
+                res.Set(key.Name, scope.Get(key.Name) ?? "", create: true);
+                continue;
+            }
+
+            res.Set(key.Name, key.Value ?? "", create: true);
+        }
+
+        foreach (var key in scope.Keys)
+        {
+            if (res.Get(key.Name) is not null)
+            {
+                continue;
+            }
+
+            res.Set(key.Name, key.Value, create: true);
+        }
+        return res;
+    }
+
     public Scope(IEnumerable<Key> keys, Scope? parent = null)
     {
         Parent = parent;
@@ -89,13 +115,15 @@ public class Scope : Iresovable
             }
         }
 
+        if (create)
+        {
+            Keys.Add(new(keyname, value));
+            return true;
+        }
+
         if (!bubble)
         {
-            if (create)
-            {
-                Keys.Add(new(keyname, value));
-                return true;
-            }
+            return false;
         }
 
         if (Parent is null)

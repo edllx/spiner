@@ -68,7 +68,7 @@ public partial class App
                     throw new ShowHelpExeption(string.Join(" ", Path));
 
                 case "--debug":
-                    Debug = true;
+                    Logger.Debug = true;
                     break;
 
                 case "--no-image-rebuild":

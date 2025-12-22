@@ -6,17 +6,20 @@ public partial class TestSuite
 {
     public Stack TestStack { get; init; }
     public Tests[] TestSet { get; init; } = [];
+    public string Description { get; init; }
 
-    public TestSuite(Stack testStack, Tests[] tests)
+    public TestSuite(Stack testStack, Tests[] tests, string description = "")
     {
         TestStack = testStack;
         TestSet = tests;
+        Description = description;
     }
 
     public TestSuite()
     {
         TestStack = new();
         TestSet = [];
+        Description = "";
     }
 
     public string ToString(int depth = 0)

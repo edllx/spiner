@@ -52,35 +52,30 @@ public class TestResultTree : TestResult
 public class TestResultLeaf : TestResult
 {
     public bool Success { get; init; } = false;
-    public string Message { get; init; }
+    public IRenderable? Message { get; init; }
 
-    public TestResultLeaf(string name, bool success, string message = "")
+    public TestResultLeaf(string name, bool success, IRenderable? message = null)
         : base(name)
     {
         Success = success;
-        Message = message;
+        Message = message ?? new Markup("");
     }
 
     public override IRenderable Format()
     {
-        StringBuilder builder = new();
+        var status = new Markup($"{Emoji.Known.CheckMarkButton} {Name}");
 
-        if (Success)
+        if (!Success)
         {
-            builder.Append($"{Emoji.Known.CheckMarkButton} {Name}");
-            return new Markup(builder.ToString());
+            status = new Markup($"{Emoji.Known.CrossMark} {Name}");
         }
-        else
+
+        if (Message is not null)
         {
-            builder.Append($"{Emoji.Known.CrossMark} {Name}");
-
-            if (!string.IsNullOrEmpty(Message))
-            {
-                builder.Append($"\n{Message}");
-            }
-
-            return new Markup($"{builder.ToString()}");
+            return new Rows(status, Message);
         }
+
+        return status;
     }
 }
 
@@ -94,12 +89,26 @@ public partial class App
 
         foreach (TestSuite suite in TestManager.Tests)
         {
+            string idxSuitename = $"TestSuite-{i++}";
+            string suiteName = string.IsNullOrEmpty(suite.Description)
+                ? idxSuitename
+                : suite.Description;
+
+            int j = 1;
             List<TestResult> suites = [];
-            TestResultTree testSuite = new($"TestSuit-{i++}", branches: suites);
+            TestResultTree testSuite = new(suiteName, branches: suites);
             results.Add(testSuite);
 
             foreach (Tests tests in suite.TestSet)
             {
+                List<TestResult> sets = [];
+                string idxSetname = $"TestSet-{j++}";
+                string setName = string.IsNullOrEmpty(tests.Description)
+                    ? idxSetname
+                    : tests.Description;
+                TestResultTree testSet = new(setName, branches: sets);
+                suites.Add(testSet);
+
                 TaskSequence testsSequence = new();
                 TaskBatch serviceBatch = new();
                 var podName = Tools.GenerateRandomString(32, "pod-");
@@ -122,9 +131,9 @@ public partial class App
                     {
                         await _podman.BuildPod(podName, [(port, 8080)]);
                         await serviceBatch.Run();
-                        Logger.Log($"Pod {podName} Ready", LogLevel.Info);
+                        Logger.Log($"Pod {podName} Ready", LogLevel.Debug);
 
-                        BaseTask testRuns = CreateTests(tests, port, testSuite);
+                        BaseTask testRuns = CreateTests(tests, port, testSet);
                         await testRuns.Run();
                         foreach (string sName in serviceTolog)
                         {
@@ -156,7 +165,7 @@ public partial class App
     {
         sequence.Add(async () =>
         {
-            Logger.Log($"Cleanning up Pod: {podName}");
+            Logger.Log($"Cleanning up Pod: {podName}", LogLevel.Debug);
             await _podman.RemovePod(podName);
             return new();
         });
@@ -208,13 +217,10 @@ public partial class App
                                 var filename = cp.Source.Split("/").Last().ToString();
                                 cmdSequence.Add(async () =>
                                 {
-                                    if (Debug)
-                                    {
-                                        Logger.Log(
-                                            $"Copy :{filename} in : {containerName}",
-                                            LogLevel.Debug
-                                        );
-                                    }
+                                    Logger.Log(
+                                        $"Copy :{filename} in : {containerName}",
+                                        LogLevel.Debug
+                                    );
 
                                     await _podman.Copy(
                                         cp.Source,
@@ -229,13 +235,10 @@ public partial class App
                             case Run run:
                                 cmdSequence.Add(async () =>
                                 {
-                                    if (Debug)
-                                    {
-                                        Logger.Log(
-                                            $"Run :{run.Text} in : {containerName}",
-                                            LogLevel.Debug
-                                        );
-                                    }
+                                    Logger.Log(
+                                        $"Run :{run.Text} in : {containerName}",
+                                        LogLevel.Debug
+                                    );
 
                                     await _podman.ExecCommandAsync(containerName, run.Text);
                                     return new();
@@ -254,7 +257,7 @@ public partial class App
 
                 await cmdSequence.Run();
 
-                Logger.Log($"Container: {containerName} Created");
+                Logger.Log($"Container: {containerName} Created", LogLevel.Debug);
 
                 return new();
             }
