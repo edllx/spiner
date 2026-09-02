@@ -1,0 +1,120 @@
+<Root>
+  <!--Define the structure of each services-->
+  <Services>
+    <Service name="db" image="potgress:17">
+      <Key name="POSTGRES_USER" value="spiner" />
+      <GeneratedKey name="POSTGRES_PASSWORD" len="32" />
+      <GeneratedKey name="POSTGRES_DB" len="10" />
+      <Key name="DB_CONNECTION_STRING" value="Server=${CONTAINER_NAME};Port=5432;Database=${POSTGRES_DB};User ID=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"/>
+
+      <Layer name="base-schema" >
+        <Sql source="./database/Config/schema.sql"/>
+      </Layer>
+
+      <Layer name="fahrenheit10" from="base-schema" >
+        <Sql source="./database/Config/fahrenheit10.sql"/>
+      </Layer>
+
+      <Layer name="celsius10" from="base-schema">
+        <Copy source="./database/Config/celsius10.sql" dest="/scripts"/>
+        <Run command="psql -U ${POSTGRES_USER} -f /script/celsius10.sql" />
+      </Layer>
+
+      <Layer name="bothfandc" from="fahrenheit10,celsius10" >
+        <Run>
+          echo multiline command
+          echo multiline command
+        </Run>
+      </Layer>
+    </Service>
+
+    <Service name="api" build="./API.Dockerfile">
+      <Param name="DB_CONNECTION_STRING"/>
+    </Service>
+  </Services>
+
+  <!--Define the structure of each enpoint-->
+  <Endpoints>
+    <Endpoint name="getall" method="GET" path="weather"/>
+
+    <Endpoint name="get" method="GET" path="weather/${id}">
+      <Param name="id"/>
+    </Endpoint>
+
+    <Endpoint name="add" method="POST" path="weather/add">
+      <Param name="temperature"/>
+      <Param name="type"/>
+
+      <Body type="json">
+        <Key name="temperature" value="${temperature}"/>
+        <Key name="type" value="${type}"/>
+      </Body>
+
+    </Endpoint>
+
+    <Endpoint name="patch" method="PATCH" path="weather/${id}">
+      <Param name="id"/>
+      <Param name="temperature"/>
+      <Param name="type"/>
+
+      <Body type="json">
+        <Key name="temperature" value="${temperature}"/>
+        <Key name="type" value="${type}"/>
+      </Body>
+    </Endpoint>
+  </Endpoints>
+
+  <TestSuite>
+    <Stack>
+      <Service name="db" layer="fahrenheit10"/>
+      <Service name="api">
+        <Arg name="DB_CONNECTION_STRING" from="db" key="DB_CONNECTION_STRING"/>
+      </Service>
+    </Stack>
+
+    <Tests mode="sync">
+      <Test>
+        <Request name="getall"/>
+        <Asserts>
+          <NotNull key="Response.Content"/>
+          <Equals actual="${Response.Content.Type}" expected="Array"/>
+          <Equals actual="${Response.Content.Len}" expected="3"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Key name="temperature" value="30"/>
+        <Key name="type" value="Celsius"/>
+
+        <Request name="add">
+          <Arg name="temperature" value="${temperature}"/>
+          <Arg name="temperature" value="${type}"/>
+        </Request>
+
+        <Asserts>
+          <NotNull key="Response.Content"/>
+          <Equals actual="${Response.Content.Type}" expected="Object"/>
+          <Equals actual="${Response.Content.temperatureC}" expected="${temperature}"/>
+        </Asserts>
+      </Test>
+
+      <Test>
+        <Request name="getall"/>
+        <Asserts>
+          <NotNull key="Response.Content"/>
+          <Equals actual="${Response.Content.Type}" expected="Array"/>
+          <Equals actual="${Response.Content.Len}" expected="4"/>
+        </Asserts>
+      </Test>
+    </Tests>
+  </TestSuite>
+
+  <TestSuite>
+    <Stack>
+      <Service name="db" layer="base-schema"/>
+      <Service name="api">
+        <Arg name="DB_CONNECTION_STRING" from="db" key="DB_CONNECTION_STRING"/>
+      </Service>
+    </Stack>
+  </TestSuite>
+</Root>

@@ -1,0 +1,16 @@
+services:
+  pgdb:
+    container_name: pgdb
+    image: postgres:17
+    env_file:
+      - .env
+    networks:
+      - pgdb_net
+    volumes:
+      - ./Config/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - 5438:5432
+
+networks:
+  pgdb_net:
+    external: true

@@ -1,0 +1,19 @@
+services:
+  weddy-api:
+    container_name: weddy-api
+    build:
+      context: ./
+      dockerfile: ./API.Dockerfile
+    env_file:
+      - api.env
+    ports:
+      - "5353:8080"
+
+  weddy-db:
+    container_name: weddy-db
+    build:
+      context: ./ 
+      dockerfile: ./DB.Dockerfile
+    env_file:
+      - db.env
+    
