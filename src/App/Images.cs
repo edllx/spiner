@@ -86,7 +86,7 @@ public partial class App
 
         sequence.Add(async () =>
         {
-            await _podman.ImagePune();
+            //await _podman.ImagePune();
             return new();
         });
     }

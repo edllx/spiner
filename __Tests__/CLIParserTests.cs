@@ -17,7 +17,7 @@ public class CLIParserTests
         Assert.True(res.Success, "Parsing failed");
         var expected = token.ToString(args);
         var actual = res.ToString(args);
-        Assert.True(expected == actual, $"{args}\n{Tools.StingDiff(expected, actual)}");
+        Assert.True(expected == actual, $"{args}\n{Tools.StringDiff(expected, actual)}");
     }
 
     [Theory]

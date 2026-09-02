@@ -73,14 +73,14 @@
       <Key name="temperature" value="105"/>
       <Key name="type" value="Celsius"/>
 
-      <Test>
+      <Test description="step-1">
         <Request name="getall"/>
         <Asserts>
           <Equals actual="{{response['json']#type}}" expected="array"/>
           <Equals actual="{{response['json']#length}}" expected="10"/>
         </Asserts>
       </Test>
-      <Test>
+      <Test description="step-2">
         <Request name="add">
           <Arg key="temperature" value="{{temperature}}"/>
           <Arg key="type" value="{{type}}"/>

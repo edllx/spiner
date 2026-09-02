@@ -4,134 +4,132 @@
     <Service name="db" image="postgres:17">
       <Key name="POSTGRES_USER" value="spiner" />
       <GeneratedKey name="POSTGRES_PASSWORD" len="32" seed="10" />
-      <GeneratedKey name="POSTGRES_DB" len="10" seed="20" prefix="DB_" />
-      <Key name="DB_CONNECTION_STRING" value="Server={{CONTAINER_NAME}};Port=5432;Database={{POSTGRES_DB}};User ID={{POSTGRES_USER}};Password={{POSTGRES_PASSWORD}};"/>
+      <Key name="POSTGRES_DB" value="weddy" />
+      <Key name="DB_CONNECTION_STRING"
+        value="Server={{CONTAINER_NAME}};Port=5432;Database={{POSTGRES_DB}};User ID={{POSTGRES_USER}};Password={{POSTGRES_PASSWORD}};" />
 
-      <Layer name="base-schema" >
-        <Sql source="./database/Config/schema.sql"/>
+      <Layer name="base-schema">
+        <Sql source="./schema.sql" />
       </Layer>
 
-      <Layer name="fahrenheit10" from="base-schema" >
-        <Sql source="./database/Config/fahrenheit10.sql"/>
+      <Layer name="fahrenheit10" from="base-schema">
+        <Sql source="./fahrenheit10.sql" />
       </Layer>
 
       <Layer name="celsius10" from="base-schema">
-        <Copy source="./database/Config/celsius10.sql" dest="/scripts"/>
-        <Run command="psql -U {{POSTGRES_USER}} -f /scripts/celsius10.sql" />
+        <Sql source="./celsius10.sql" />
       </Layer>
 
-      <Layer name="bothfandc" from="fahrenheit10,celsius10" >
-        <Run>
-          echo multiline command
-          echo multiline command
-        </Run>
+      <Layer name="bothfandc" from="fahrenheit10,celsius10">
       </Layer>
-    </Service  >
+
+    </Service>
 
     <Service name="api" build="/home/etienne/Desktop/repository/demo/tya/API.Dockerfile">
-      <Key name="DB_CONNECTION_STRING"/>
+      <Key name="DB_CONNECTION_STRING" />
     </Service>
   </Services>
 
-  <!--Define the structure of each request-->
+  <!--Define
+  the structure of each request-->
   <Requests>
-    <Request name="getall" method="GET" path="weather"/>
+    <Request name="getall" method="GET" path="weather" />
 
     <Request name="get" method="GET" path="weather/{{id}}">
-      <Key name="id"/>
+      <Key name="id" />
     </Request>
 
     <Request name="add" method="POST" path="weather/add">
-      <Key name="temperature"/>
-      <Key name="type"/>
+      <Key name="temperature" />
+      <Key name="type" />
 
       <Body type="json">
-        <Key name="temperature" value="{{temperature}}"/>
-        <Key name="type" value="{{type}}"/>
+        <Key name="temperature" value="{{temperature}}" />
+        <Key name="type" value="{{type}}" />
       </Body>
     </Request>
 
     <Request name="patch" method="PATCH" path="weather">
-      <Key name="id"/>
-      <Key name="temperature"/>
-      <Key name="type"/>
+      <Key name="id" />
+      <Key name="temperature" />
+      <Key name="type" />
 
       <Body type="json">
-        <Key name="id" value="{{id}}"/>
-        <Key name="temperature" value="{{temperature}}"/>
-        <Key name="type" value="{{type}}"/>
+        <Key name="id" value="{{id}}" />
+        <Key name="temperature" value="{{temperature}}" />
+        <Key name="type" value="{{type}}" />
       </Body>
     </Request>
   </Requests>
 
   <TestSuite>
     <Stack>
-      <Service name="db" layer="fahrenheit10"/>
+      <Service name="db" layer="fahrenheit10" />
 
       <Service name="api" target="true">
-        <Arg from="db" key="DB_CONNECTION_STRING"/>
+        <Arg from="db" key="DB_CONNECTION_STRING" />
       </Service>
     </Stack>
 
     <Tests mode="sync">
-      <Key name="id" value="random-id"/>
-      <Key name="temperature" value="105"/>
-      <Key name="type" value="Celsius"/>
+      <Key name="id" value="random-id" />
+      <Key name="temperature" value="105" />
+      <Key name="type" value="Celsius" />
 
       <Test>
-        <Request name="getall"/>
+        <Request name="getall" />
         <Asserts>
-          <Equals actual="{{response['json']#type}}" expected="array"/>
-          <Equals actual="{{response['json']#length}}" expected="10"/>
+          <Equals actual="{{response['json']#type}}" expected="array" />
+          <Equals actual="{{response['json']#length}}" expected="10" />
         </Asserts>
       </Test>
 
       <Test>
         <Request name="add">
-          <Arg key="temperature" value="{{temperature}}"/>
-          <Arg key="type" value="{{type}}"/>
+          <Arg key="temperature" value="{{temperature}}" />
+          <Arg key="type" value="{{type}}" />
         </Request>
 
         <Response>
-          <Set key="id" value="{{response['json']['id']}}"/>
+          <Set key="id" value="{{response['json']['id']}}" />
         </Response>
 
         <Asserts>
-          <Equals actual="{{response['json']#type}}" expected="object"/>
-          <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}"/>
+          <Equals actual="{{response['json']#type}}" expected="object" />
+          <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}" />
         </Asserts>
       </Test>
 
       <Test>
         <Request name="get">
-          <Arg key="id" value="{{id}}"/>
+          <Arg key="id" value="{{id}}" />
         </Request>
 
         <Asserts>
-          <Equals actual="{{response['json']#type}}" expected="object"/>
-          <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}"/>
+          <Equals actual="{{response['json']#type}}" expected="object" />
+          <Equals actual="{{response['json']['temperatureC']}}" expected="{{temperature}}" />
         </Asserts>
       </Test>
 
       <Test>
         <Request name="patch">
-          <Arg key="id" value="{{id}}"/>
-          <Arg key="temperature" value="50"/>
-          <Arg key="type" value="{{type}}"/>
+          <Arg key="id" value="{{id}}" />
+          <Arg key="temperature" value="50" />
+          <Arg key="type" value="{{type}}" />
         </Request>
 
         <Asserts>
-          <Equals actual="{{response['json']#type}}" expected="object"/>
-          <Equals actual="{{response['json']['id']}}" expected="{{id}}"/>
+          <Equals actual="{{response['json']#type}}" expected="object" />
+          <Equals actual="{{response['json']['id']}}" expected="{{id}}" />
         </Asserts>
       </Test>
 
       <Test>
-        <Request name="getall"/>
+        <Request name="getall" />
         <Asserts>
           <!-- Response is a contextual variable to each test-->
-          <Equals actual="{{response['json']#type}}" expected="array"/>
-          <Equals actual="{{response['json']#length}}" expected="4"/>
+          <Equals actual="{{response['json']#type}}" expected="array" />
+          <Equals actual="{{response['json']#length}}" expected="4" />
         </Asserts>
       </Test>
 

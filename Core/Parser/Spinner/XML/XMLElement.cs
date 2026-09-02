@@ -5,7 +5,7 @@ namespace spinner;
 
 public class XML
 {
-    private static IParser Spaces = AnyStringP(" \t");
+    private static IParser Spaces = AnyStringP(" \t\r\n");
 
     private static IParser GenericXMLElementSingleLine = new XMLSingleLineElementParser(AlphaChar);
     private static IParser GenericXMLElementMultiLine = new XMLElemenParser(AlphaChar);

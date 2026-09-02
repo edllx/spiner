@@ -7,7 +7,9 @@ public class XMLAttributeParser : IParser
 {
     private static IParser Attribute = new XMLAttributeDetector();
     private static IParser Spaces = StringP(" ");
-    private static IParser Attributes = ZeroPlus(Seq(Spaces, Attribute));
+    private static IParser Attributes = ZeroPlus(
+        Seq(OnePlus(Choice(Spaces, LineBreak)), Attribute)
+    );
 
     public ParseResult Parse(ParseContext context)
     {

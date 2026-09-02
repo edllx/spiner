@@ -110,6 +110,10 @@ public class Logger
 
     public void Log(string message, LogLevel logLevel = LogLevel.Info, object? source = null)
     {
+        if (!Debug)
+        {
+            return;
+        }
         source = source ?? this;
         Register(new(message, logLevel: logLevel), source: source);
     }

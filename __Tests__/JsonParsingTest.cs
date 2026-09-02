@@ -44,7 +44,7 @@ public class JsonParsingTest
 
             Assert.True(
                 expected == actual,
-                $"{json}\n{scope.ToString(0)}\n{Tools.StingDiff(expected, actual)}"
+                $"{json}\n{scope.ToString(0)}\n{Tools.StringDiff(expected, actual)}"
             );
         }
     }

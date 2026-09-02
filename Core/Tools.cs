@@ -136,7 +136,7 @@ public class Tools
         return builder.ToString();
     }
 
-    public static string StingDiff(string expected, string actual)
+    public static string StringDiff(string expected, string actual)
     {
         StringBuilder builder = new();
         var expectedList = expected.Split('\n');
